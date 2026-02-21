@@ -19,16 +19,37 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
         bool active;
     }
 
+    struct Offer {
+        uint256 offerId;
+        address nftContract;
+        uint256 tokenId;
+        address payable buyer;
+        uint256 amount;
+        uint256 expiry;
+        bool active;
+    }
+
     // ──── State ────
     uint256 private _nextListingId;
+    uint256 private _nextOfferId;
+
     uint256 public commissionRate = 250; // 2.5% (basis points / 100)
     uint256 public constant COMMISSION_DENOMINATOR = 10000;
+
+    uint256 public constant DEFAULT_OFFER_DURATION = 7 days;
+    uint256 public constant MIN_OFFER_DURATION = 1 hours;
+    uint256 public constant MAX_OFFER_DURATION = 30 days;
 
     mapping(uint256 => Listing) public listings;
     uint256[] private _activeListingIds;
 
     /// @notice Reverse lookup: (nftContract => tokenId => listingId+1). 0 = no active listing.
     mapping(address => mapping(uint256 => uint256)) public activeListingByToken;
+
+    mapping(uint256 => Offer) public offers;
+
+    /// @notice Accumulated commission from sales (excludes escrowed offer ETH).
+    uint256 private _accumulatedCommission;
 
     // ──── Events ────
     event ItemListed(
@@ -47,6 +68,25 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
     );
     event ItemUnlisted(uint256 indexed listingId);
     event CommissionRateUpdated(uint256 newRate);
+
+    event OfferMade(
+        uint256 indexed offerId,
+        address indexed nftContract,
+        uint256 indexed tokenId,
+        address buyer,
+        uint256 amount,
+        uint256 expiry
+    );
+    event OfferAccepted(
+        uint256 indexed offerId,
+        address indexed nftContract,
+        uint256 indexed tokenId,
+        address seller,
+        address buyer,
+        uint256 amount
+    );
+    event OfferRejected(uint256 indexed offerId);
+    event OfferCancelled(uint256 indexed offerId);
 
     constructor() Ownable(msg.sender) {}
 
@@ -139,6 +179,112 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
         emit ItemUnlisted(listingId);
     }
 
+    // ──── Offer Functions ────
+
+    /// @notice Make an ETH offer on any NFT. ETH is escrowed in the contract.
+    /// @param nftContract The NFT contract address
+    /// @param tokenId The token to offer on
+    /// @param durationSeconds Offer validity in seconds (1h–30d; 0 uses default 7 days)
+    function makeOffer(
+        address nftContract,
+        uint256 tokenId,
+        uint256 durationSeconds
+    ) external payable nonReentrant whenNotPaused returns (uint256) {
+        require(msg.value > 0, "Offer amount must be > 0");
+
+        uint256 duration = durationSeconds == 0 ? DEFAULT_OFFER_DURATION : durationSeconds;
+        require(duration >= MIN_OFFER_DURATION, "Duration too short (min 1h)");
+        require(duration <= MAX_OFFER_DURATION, "Duration too long (max 30d)");
+
+        uint256 offerId = _nextOfferId++;
+        uint256 expiry = block.timestamp + duration;
+
+        offers[offerId] = Offer({
+            offerId: offerId,
+            nftContract: nftContract,
+            tokenId: tokenId,
+            buyer: payable(msg.sender),
+            amount: msg.value,
+            expiry: expiry,
+            active: true
+        });
+
+        emit OfferMade(offerId, nftContract, tokenId, msg.sender, msg.value, expiry);
+        return offerId;
+    }
+
+    /// @notice Accept an offer. Caller must be the NFT owner and have approved this contract.
+    /// @dev Follows CEI: state change before external calls to prevent reentrancy.
+    function acceptOffer(uint256 offerId) external nonReentrant whenNotPaused {
+        Offer storage offer = offers[offerId];
+        require(offer.active, "Offer not active");
+        require(block.timestamp <= offer.expiry, "Offer expired");
+        require(
+            IERC721(offer.nftContract).ownerOf(offer.tokenId) == msg.sender,
+            "Not the NFT owner"
+        );
+
+        // CEI: mark inactive BEFORE external calls
+        offer.active = false;
+
+        address nftContract = offer.nftContract;
+        uint256 tokenId = offer.tokenId;
+        address payable buyer = offer.buyer;
+        uint256 amount = offer.amount;
+
+        // Auto-unlist any active fixed-price listing for this NFT
+        _unlistIfActive(nftContract, tokenId);
+
+        // Transfer NFT from seller to buyer
+        IERC721(nftContract).safeTransferFrom(msg.sender, buyer, tokenId);
+
+        // Deduct fees and pay seller from escrowed ETH
+        _deductFeesAndPay(
+            nftContract,
+            tokenId,
+            payable(msg.sender),
+            amount
+        );
+
+        emit OfferAccepted(offerId, nftContract, tokenId, msg.sender, buyer, amount);
+    }
+
+    /// @notice Reject an offer (NFT owner only). Refunds escrowed ETH to buyer.
+    function rejectOffer(uint256 offerId) external {
+        Offer storage offer = offers[offerId];
+        require(offer.active, "Offer not active");
+        require(
+            IERC721(offer.nftContract).ownerOf(offer.tokenId) == msg.sender,
+            "Not the NFT owner"
+        );
+
+        offer.active = false;
+
+        // Refund buyer
+        offer.buyer.transfer(offer.amount);
+
+        emit OfferRejected(offerId);
+    }
+
+    /// @notice Cancel your own pending offer. Refunds escrowed ETH.
+    function cancelOffer(uint256 offerId) external nonReentrant {
+        Offer storage offer = offers[offerId];
+        require(offer.active, "Offer not active");
+        require(offer.buyer == msg.sender, "Not the offer buyer");
+
+        offer.active = false;
+
+        // Refund buyer
+        offer.buyer.transfer(offer.amount);
+
+        emit OfferCancelled(offerId);
+    }
+
+    /// @notice Get offer details by ID
+    function getOffer(uint256 offerId) external view returns (Offer memory) {
+        return offers[offerId];
+    }
+
     // ──── View Functions ────
 
     /// @notice Get all active listing IDs
@@ -149,6 +295,16 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
     /// @notice Get total number of listings ever created
     function totalListings() external view returns (uint256) {
         return _nextListingId;
+    }
+
+    /// @notice Get total number of offers ever created
+    function totalOffers() external view returns (uint256) {
+        return _nextOfferId;
+    }
+
+    /// @notice Get the accumulated commission available to withdraw
+    function accumulatedCommission() external view returns (uint256) {
+        return _accumulatedCommission;
     }
 
     // ──── Admin ────
@@ -170,17 +326,19 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
         _unpause();
     }
 
-    /// @notice Withdraw accumulated commission
+    /// @notice Withdraw accumulated commission only (never touches escrowed offer ETH)
     function withdrawCommission() external onlyOwner {
-        uint256 balance = address(this).balance;
-        require(balance > 0, "No commission to withdraw");
-        payable(owner()).transfer(balance);
+        uint256 amount = _accumulatedCommission;
+        require(amount > 0, "No commission to withdraw");
+        _accumulatedCommission = 0;
+        payable(owner()).transfer(amount);
     }
 
     // ──── Internal ────
 
     /// @notice Deduct commission and royalty from sale price, pay seller and royalty receiver.
-    /// @dev Commission stays in contract; owner withdraws via withdrawCommission().
+    /// @dev Commission stays in contract and is tracked via _accumulatedCommission;
+    ///      owner withdraws via withdrawCommission().
     /// @return royaltyPaid The royalty amount paid to the royalty receiver (0 if non-ERC2981 NFT).
     function _deductFeesAndPay(
         address nftContract,
@@ -210,6 +368,9 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
 
         uint256 sellerProceeds = salePrice - commission - royaltyAmount;
 
+        // Track commission separately from escrowed offer ETH
+        _accumulatedCommission += commission;
+
         // Pay royalty receiver if applicable
         if (royaltyAmount > 0 && royaltyReceiver != address(0)) {
             payable(royaltyReceiver).transfer(royaltyAmount);
@@ -219,6 +380,24 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
         seller.transfer(sellerProceeds);
 
         return royaltyAmount;
+    }
+
+    /// @notice Unlist a token if it has an active fixed-price listing.
+    /// @dev Used by acceptOffer to auto-cancel listings when an offer is accepted.
+    function _unlistIfActive(address nftContract, uint256 tokenId) internal {
+        uint256 storedId = activeListingByToken[nftContract][tokenId];
+        if (storedId == 0) return; // No active listing
+
+        uint256 listingId = storedId - 1; // Convert from stored (id+1) to actual id
+        Listing storage listing = listings[listingId];
+
+        if (!listing.active) return; // Guard: already inactive
+
+        listing.active = false;
+        activeListingByToken[nftContract][tokenId] = 0;
+        _removeActiveListing(listingId);
+
+        emit ItemUnlisted(listingId);
     }
 
     function _removeActiveListing(uint256 listingId) private {
