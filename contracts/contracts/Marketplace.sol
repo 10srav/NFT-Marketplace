@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {IERC2981} from "@openzeppelin/contracts/interfaces/IERC2981.sol";
+import {IERC165} from "@openzeppelin/contracts/utils/introspection/IERC165.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Marketplace is ReentrancyGuard, Pausable, Ownable {
     // ──── Types ────
@@ -25,6 +27,9 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
     mapping(uint256 => Listing) public listings;
     uint256[] private _activeListingIds;
 
+    /// @notice Reverse lookup: (nftContract => tokenId => listingId+1). 0 = no active listing.
+    mapping(address => mapping(uint256 => uint256)) public activeListingByToken;
+
     // ──── Events ────
     event ItemListed(
         uint256 indexed listingId,
@@ -37,7 +42,8 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
         uint256 indexed listingId,
         address indexed buyer,
         uint256 price,
-        uint256 commission
+        uint256 commission,
+        uint256 royalty
     );
     event ItemUnlisted(uint256 indexed listingId);
     event CommissionRateUpdated(uint256 newRate);
@@ -72,6 +78,9 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
         });
         _activeListingIds.push(listingId);
 
+        // Reverse lookup: store listingId+1 so 0 can mean "no active listing"
+        activeListingByToken[nftContract][tokenId] = listingId + 1;
+
         emit ItemListed(listingId, nftContract, tokenId, msg.sender, price);
         return listingId;
     }
@@ -85,9 +94,8 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
 
         listing.active = false;
 
-        // Calculate commission
-        uint256 commission = (listing.price * commissionRate) / COMMISSION_DENOMINATOR;
-        uint256 sellerProceeds = listing.price - commission;
+        // Clear reverse lookup
+        activeListingByToken[listing.nftContract][listing.tokenId] = 0;
 
         // Transfer NFT to buyer
         IERC721(listing.nftContract).safeTransferFrom(
@@ -96,17 +104,23 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
             listing.tokenId
         );
 
-        // Pay seller
-        listing.seller.transfer(sellerProceeds);
-
-        // Refund excess
+        // Refund excess payment before settlement
         if (msg.value > listing.price) {
             payable(msg.sender).transfer(msg.value - listing.price);
         }
 
+        // Deduct fees and pay seller + royalty receiver
+        uint256 royaltyPaid = _deductFeesAndPay(
+            listing.nftContract,
+            listing.tokenId,
+            listing.seller,
+            listing.price
+        );
+
         _removeActiveListing(listingId);
 
-        emit ItemSold(listingId, msg.sender, listing.price, commission);
+        uint256 commission = (listing.price * commissionRate) / COMMISSION_DENOMINATOR;
+        emit ItemSold(listingId, msg.sender, listing.price, commission, royaltyPaid);
     }
 
     /// @notice Cancel a listing
@@ -116,6 +130,10 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
         require(listing.seller == msg.sender, "Not the seller");
 
         listing.active = false;
+
+        // Clear reverse lookup
+        activeListingByToken[listing.nftContract][listing.tokenId] = 0;
+
         _removeActiveListing(listingId);
 
         emit ItemUnlisted(listingId);
@@ -160,6 +178,48 @@ contract Marketplace is ReentrancyGuard, Pausable, Ownable {
     }
 
     // ──── Internal ────
+
+    /// @notice Deduct commission and royalty from sale price, pay seller and royalty receiver.
+    /// @dev Commission stays in contract; owner withdraws via withdrawCommission().
+    /// @return royaltyPaid The royalty amount paid to the royalty receiver (0 if non-ERC2981 NFT).
+    function _deductFeesAndPay(
+        address nftContract,
+        uint256 tokenId,
+        address payable seller,
+        uint256 salePrice
+    ) internal returns (uint256 royaltyPaid) {
+        uint256 royaltyAmount = 0;
+        address royaltyReceiver = address(0);
+
+        // Check ERC-2981 support via try/catch — handles non-standard contracts gracefully
+        try IERC165(nftContract).supportsInterface(type(IERC2981).interfaceId)
+            returns (bool supported)
+        {
+            if (supported) {
+                (royaltyReceiver, royaltyAmount) =
+                    IERC2981(nftContract).royaltyInfo(tokenId, salePrice);
+            }
+        } catch {
+            // Non-standard contract reverted — treat as no royalty
+        }
+
+        uint256 commission = (salePrice * commissionRate) / COMMISSION_DENOMINATOR;
+
+        // ROYL-04: guard against combined fees exceeding sale price
+        require(royaltyAmount + commission <= salePrice, "Fees exceed sale price");
+
+        uint256 sellerProceeds = salePrice - commission - royaltyAmount;
+
+        // Pay royalty receiver if applicable
+        if (royaltyAmount > 0 && royaltyReceiver != address(0)) {
+            payable(royaltyReceiver).transfer(royaltyAmount);
+        }
+
+        // Pay seller (commission stays in contract)
+        seller.transfer(sellerProceeds);
+
+        return royaltyAmount;
+    }
 
     function _removeActiveListing(uint256 listingId) private {
         for (uint256 i = 0; i < _activeListingIds.length; i++) {
