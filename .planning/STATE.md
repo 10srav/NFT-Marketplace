@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 1 of 5 (Contract Foundation)
-Plan: 4 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 01-04-PLAN.md (CollectionFactory + Collection EIP-1167 clone factory)
+Last activity: 2026-02-21 — Completed 01-05-PLAN.md (Offer/escrow system for Marketplace.sol)
 
-Progress: [████░░░░░░] 15% (4/26 total plans estimated)
+Progress: [█████░░░░░] 19% (5/26 total plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 4 min
-- Total execution time: 16 min
+- Total execution time: 21 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-contract-foundation | 4/6 | 16 min | 4 min |
+| 01-contract-foundation | 5/6 | 21 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 4 min, 4 min, 4 min, 4 min
+- Last 5 plans: 4 min, 4 min, 4 min, 4 min, 5 min
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -58,6 +58,9 @@ Recent decisions affecting current work:
 - [01-04]: mintNFT is onlyOwner in Collection.sol (not public) — only collection creator/owner can mint into their collection
 - [01-04]: Royalty receiver is msg.sender at mint time (collection owner) — royalties always flow to the creator who minted
 - [01-04]: CollectionCreated event emits both name and symbol — enables subgraph indexing without extra contract calls in Phase 2
+- [01-05]: _accumulatedCommission tracker added — withdrawCommission only withdraws tracked commission, never escrowed offer ETH (critical safety)
+- [01-05]: cancelOffer/rejectOffer have no expiry check — buyers can always recover escrowed ETH; only acceptOffer enforces the deadline
+- [01-05]: Auto-unlist emits ItemUnlisted — subgraph/frontend can treat it identically to manual unlist
 
 ### Pending Todos
 
@@ -70,8 +73,15 @@ Recent decisions affecting current work:
 - [Phase 2]: graph-cli and graph-ts version estimates (~0.91.x / ~0.35.x) need verification with `npm info` before Phase 2 begins.
 - [Phase 4]: Chain reorganization + WebSocket broadcast interaction (P-16) needs explicit test design before implementing the listener — write the test scenario first.
 
+### Pending Todos (Offer System)
+
+- Frontend: makeOffer UI flow — ETH amount input + duration picker on NFT detail page
+- Frontend: acceptOffer/rejectOffer panel — seller sees incoming offers on their NFTs
+- Frontend: cancelOffer on Dashboard — buyer sees their pending offers with cancel button
+- Subgraph (Phase 2): Index OfferMade, OfferAccepted, OfferRejected, OfferCancelled events
+
 ## Session Continuity
 
-Last session: 2026-02-21T08:33:52Z
-Stopped at: Completed 01-04-PLAN.md — CollectionFactory + Collection EIP-1167 clone factory (2 tasks, 118 tests passing)
+Last session: 2026-02-21T08:35:00Z
+Stopped at: Completed 01-05-PLAN.md — Offer/escrow system for Marketplace.sol (2 tasks, 155 tests passing)
 Resume file: None
