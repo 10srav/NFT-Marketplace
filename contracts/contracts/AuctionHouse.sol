@@ -9,7 +9,7 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-/// @title AuctionHouse — English auction with NFT escrow, pull-payment bidding,
+/// @title AuctionHouse — English and Dutch auctions with NFT escrow, pull-payment bidding,
 ///        anti-sniping timer extension, and royalty-aware settlement.
 contract AuctionHouse is ReentrancyGuard, Pausable, Ownable, IERC721Receiver {
     // ──── Commission State ────
@@ -25,7 +25,7 @@ contract AuctionHouse is ReentrancyGuard, Pausable, Ownable, IERC721Receiver {
     uint256 public constant MIN_AUCTION_DURATION = 1 hours;
     uint256 public constant MAX_AUCTION_DURATION = 30 days;
 
-    // ──── Auction Struct ────
+    // ──── Auction Structs ────
 
     struct EnglishAuction {
         address nftContract;
@@ -40,15 +40,32 @@ contract AuctionHouse is ReentrancyGuard, Pausable, Ownable, IERC721Receiver {
         bool cancelled;
     }
 
+    struct DutchAuction {
+        address nftContract;
+        uint256 tokenId;
+        address payable seller;
+        uint256 startPrice;
+        uint256 endPrice;
+        uint256 startTime;
+        uint256 duration;
+        bool sold;
+        bool cancelled;
+    }
+
     // ──── State ────
 
     uint256 private _nextEnglishAuctionId;
 
-    /// @notice Auction storage by ID
+    /// @notice English auction storage by ID
     mapping(uint256 => EnglishAuction) public englishAuctions;
 
     /// @notice Pull-payment ledger: auctionId => bidder => refundable amount
     mapping(uint256 => mapping(address => uint256)) public pendingReturns;
+
+    uint256 private _nextDutchAuctionId;
+
+    /// @notice Dutch auction storage by ID
+    mapping(uint256 => DutchAuction) public dutchAuctions;
 
     // ──── Events ────
 
@@ -83,6 +100,24 @@ contract AuctionHouse is ReentrancyGuard, Pausable, Ownable, IERC721Receiver {
     event EnglishAuctionCancelled(uint256 indexed auctionId);
 
     event CommissionRateUpdated(uint256 newRate);
+
+    event DutchAuctionCreated(
+        uint256 indexed auctionId,
+        address indexed nftContract,
+        uint256 indexed tokenId,
+        address seller,
+        uint256 startPrice,
+        uint256 endPrice,
+        uint256 duration
+    );
+
+    event DutchAuctionSold(
+        uint256 indexed auctionId,
+        address indexed buyer,
+        uint256 price
+    );
+
+    event DutchAuctionCancelled(uint256 indexed auctionId);
 
     // ──── Constructor ────
 
@@ -244,6 +279,129 @@ contract AuctionHouse is ReentrancyGuard, Pausable, Ownable, IERC721Receiver {
         IERC721(a.nftContract).safeTransferFrom(address(this), a.seller, a.tokenId);
 
         emit EnglishAuctionCancelled(auctionId);
+    }
+
+    // ──── Dutch Auction Functions ────
+
+    /// @notice Create a Dutch auction. The NFT is escrowed in this contract.
+    ///         Price decreases linearly from startPrice to endPrice over duration.
+    /// @param nftContract  Address of the ERC-721 contract
+    /// @param tokenId      Token to auction
+    /// @param startPrice   Starting (highest) price in wei
+    /// @param endPrice     Floor (lowest) price in wei — must be > 0 and < startPrice
+    /// @param duration     Auction duration in seconds (1h–30d)
+    /// @return auctionId   The newly created Dutch auction ID
+    function createDutchAuction(
+        address nftContract,
+        uint256 tokenId,
+        uint256 startPrice,
+        uint256 endPrice,
+        uint256 duration
+    ) external whenNotPaused returns (uint256) {
+        require(startPrice > endPrice, "startPrice must exceed endPrice");
+        require(endPrice > 0, "endPrice must be > 0");
+        require(
+            duration >= MIN_AUCTION_DURATION && duration <= MAX_AUCTION_DURATION,
+            "Invalid duration"
+        );
+        require(
+            IERC721(nftContract).ownerOf(tokenId) == msg.sender,
+            "Not the NFT owner"
+        );
+
+        uint256 auctionId = _nextDutchAuctionId++;
+
+        dutchAuctions[auctionId] = DutchAuction({
+            nftContract: nftContract,
+            tokenId: tokenId,
+            seller: payable(msg.sender),
+            startPrice: startPrice,
+            endPrice: endPrice,
+            startTime: block.timestamp,
+            duration: duration,
+            sold: false,
+            cancelled: false
+        });
+
+        // Escrow: transfer NFT from seller to this contract
+        IERC721(nftContract).safeTransferFrom(msg.sender, address(this), tokenId);
+
+        emit DutchAuctionCreated(
+            auctionId,
+            nftContract,
+            tokenId,
+            msg.sender,
+            startPrice,
+            endPrice,
+            duration
+        );
+
+        return auctionId;
+    }
+
+    /// @notice Compute the current price of a Dutch auction via linear decay.
+    ///         Pure computation — no storage writes. Returns floor once duration elapses.
+    /// @param auctionId  The Dutch auction to query
+    /// @return           Current price in wei
+    function getCurrentPrice(uint256 auctionId) public view returns (uint256) {
+        DutchAuction storage a = dutchAuctions[auctionId];
+        uint256 elapsed = block.timestamp - a.startTime;
+        if (elapsed >= a.duration) {
+            return a.endPrice;
+        }
+        // Linear decay: startPrice - ((startPrice - endPrice) * elapsed / duration)
+        uint256 priceDrop = ((a.startPrice - a.endPrice) * elapsed) / a.duration;
+        return a.startPrice - priceDrop;
+    }
+
+    /// @notice Buy an NFT at the current Dutch auction price.
+    ///         Overpayment is refunded. Royalty + commission are deducted from sale.
+    /// @param auctionId  The Dutch auction to purchase from
+    function buyDutch(uint256 auctionId) external payable nonReentrant whenNotPaused {
+        DutchAuction storage a = dutchAuctions[auctionId];
+
+        require(a.seller != address(0), "Auction does not exist");
+        require(!a.sold, "Auction already sold");
+        require(!a.cancelled, "Auction is cancelled");
+
+        uint256 currentPrice = getCurrentPrice(auctionId);
+        require(msg.value >= currentPrice, "Insufficient ETH sent");
+
+        // CEI: update state BEFORE external calls
+        a.sold = true;
+
+        // Refund overpayment to buyer
+        uint256 overpayment = msg.value - currentPrice;
+        if (overpayment > 0) {
+            payable(msg.sender).transfer(overpayment);
+        }
+
+        // Transfer NFT to buyer
+        IERC721(a.nftContract).safeTransferFrom(address(this), msg.sender, a.tokenId);
+
+        // Pay seller minus commission and royalty
+        _deductFeesAndPay(a.nftContract, a.tokenId, a.seller, currentPrice);
+
+        emit DutchAuctionSold(auctionId, msg.sender, currentPrice);
+    }
+
+    /// @notice Cancel an unsold Dutch auction. Only the seller can cancel.
+    ///         The escrowed NFT is returned to the seller.
+    /// @param auctionId  The Dutch auction to cancel
+    function cancelDutchAuction(uint256 auctionId) external {
+        DutchAuction storage a = dutchAuctions[auctionId];
+
+        require(a.seller != address(0), "Auction does not exist");
+        require(msg.sender == a.seller, "Not the seller");
+        require(!a.sold, "Auction already sold");
+        require(!a.cancelled, "Auction already cancelled");
+
+        a.cancelled = true;
+
+        // Return escrowed NFT to seller
+        IERC721(a.nftContract).safeTransferFrom(address(this), a.seller, a.tokenId);
+
+        emit DutchAuctionCancelled(auctionId);
     }
 
     // ──── Admin ────
