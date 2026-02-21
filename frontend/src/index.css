@@ -1,0 +1,169 @@
+@import "tailwindcss";
+
+/* ── Google Fonts ── */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+/* ── Base ── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #0a0a0f;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+/* ── Gradient Text ── */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glassmorphism ── */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ── Card Hover Effects ── */
+.ant-card-hoverable:hover {
+  border-color: rgba(102, 126, 234, 0.2) !important;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.08);
+  transform: translateY(-4px);
+  transition: all 0.3s ease;
+}
+
+.ant-card-hoverable:hover img {
+  transform: scale(1.05);
+}
+
+.ant-card {
+  transition: all 0.3s ease;
+}
+
+/* ── Ant Design Dark Theme Overrides ── */
+.ant-layout-header {
+  line-height: normal !important;
+}
+
+.ant-menu-horizontal {
+  border-bottom: none !important;
+}
+
+.ant-menu-item {
+  font-weight: 500 !important;
+}
+
+.ant-table {
+  background: transparent !important;
+}
+
+.ant-descriptions-bordered .ant-descriptions-item-label,
+.ant-descriptions-bordered .ant-descriptions-item-content {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.ant-modal-content {
+  border-radius: 16px !important;
+}
+
+/* ── Responsive Nav ── */
+.mobile-menu-btn {
+  display: none !important;
+}
+
+.desktop-nav,
+.desktop-wallet {
+  display: flex !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-btn {
+    display: flex !important;
+  }
+  .desktop-nav,
+  .desktop-wallet {
+    display: none !important;
+  }
+}
+
+/* ── Animations ── */
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(30px, -30px) rotate(1deg);
+  }
+  66% {
+    transform: translate(-20px, 20px) rotate(-1deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Upload Dragger Override ── */
+.ant-upload-drag {
+  border-color: rgba(102, 126, 234, 0.3) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 12px !important;
+}
+
+.ant-upload-drag:hover {
+  border-color: rgba(102, 126, 234, 0.5) !important;
+}
+
+/* ── Steps Override ── */
+.ant-steps .ant-steps-item-finish .ant-steps-item-icon {
+  border-color: #667eea !important;
+  background: rgba(102, 126, 234, 0.15) !important;
+}
+
+.ant-steps .ant-steps-item-finish .ant-steps-item-icon .ant-steps-icon {
+  color: #667eea !important;
+}
+
+/* ── Select dropdown ── */
+.ant-select-dropdown {
+  background: #1a1a2e !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
