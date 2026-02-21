@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-02-21)
 
 **Core value:** Users can create, discover, and trade NFTs through a smooth, real-time marketplace experience that showcases the full Web3 development stack.
-**Current focus:** Phase 1 — Contract Foundation
+**Current focus:** Phase 1 complete — ready for Phase 2 (Subgraph Indexer)
 
 ## Current Position
 
-Phase: 1 of 5 (Contract Foundation)
-Plan: 6 of 6 in current phase (01-03 complete; note: plans completed out of linear order)
-Status: In progress
-Last activity: 2026-02-21 — Completed 01-03-PLAN.md (Dutch auction for AuctionHouse.sol)
+Phase: 1 of 5 (Contract Foundation) — COMPLETE
+Plan: 6 of 6 in phase (all plans complete)
+Status: Phase complete
+Last activity: 2026-02-21 — Completed 01-06-PLAN.md (deploy infrastructure and contracts.ts ABI update)
 
 Progress: [██████░░░░] 23% (6/26 total plans estimated)
 
@@ -21,16 +21,16 @@ Progress: [██████░░░░] 23% (6/26 total plans estimated)
 **Velocity:**
 - Total plans completed: 6
 - Average duration: 4 min
-- Total execution time: 26 min
+- Total execution time: 30 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-contract-foundation | 6/6 | 26 min | 4 min |
+| 01-contract-foundation | 6/6 | 30 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 4 min, 4 min, 4 min, 5 min, 5 min
+- Last 5 plans: 4 min, 4 min, 5 min, 5 min, 4 min
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -63,16 +63,20 @@ Recent decisions affecting current work:
 - [01-05]: _accumulatedCommission tracker added — withdrawCommission only withdraws tracked commission, never escrowed offer ETH (critical safety)
 - [01-05]: cancelOffer/rejectOffer have no expiry check — buyers can always recover escrowed ETH; only acceptOffer enforces the deadline
 - [01-05]: Auto-unlist emits ItemUnlisted — subgraph/frontend can treat it identically to manual unlist
+- [01-06]: deploy.js writes deployments/{network}.json; canonical address source for all phases
+- [01-06]: nftContractV1 field in deployments JSON preserves old NFTContract address for Dashboard dual-address enumeration
+- [01-06]: COLLECTION entry in contracts.ts has no fixed address — clients use clone address returned by CollectionFactory
 
 ### Pending Todos
 
 - Frontend: mintNFT calls in Create page must be updated to pass royaltyBps (default 0 until UI input is added in Phase 3)
 - Frontend: ItemSold event listener must handle new 5-arg signature (added royalty field)
+- Frontend: zero-address guard needed before calling AUCTION_HOUSE and COLLECTION_FACTORY (env vars not set in local dev)
 
 ### Blockers/Concerns
 
-- [Phase 1]: Redeploying NFTContract.sol to add ERC-2981 means existing MVP NFTs (minted without royalty support) will have a different contract address. Dashboard ownerOf enumeration must handle both old and new contract addresses — needs explicit decision in Phase 1 plan.
 - [Phase 2]: graph-cli and graph-ts version estimates (~0.91.x / ~0.35.x) need verification with `npm info` before Phase 2 begins.
+- [Phase 3]: Dashboard must handle both nftContract (new, royalty-aware) and nftContractV1 (old, no royalty) when enumerating user NFTs — deploy.js preserves V1 address in deployments JSON.
 - [Phase 4]: Chain reorganization + WebSocket broadcast interaction (P-16) needs explicit test design before implementing the listener — write the test scenario first.
 
 ### Pending Todos (Offer System)
@@ -89,8 +93,14 @@ Recent decisions affecting current work:
 - Frontend Phase 3: Countdown price display using getCurrentPrice view
 - Backend Phase 4: Expose dutchAuctions mapping + getCurrentPrice via REST read endpoints
 
+### Pending Todos (Collections)
+
+- Subgraph (Phase 2): Index CollectionCreated event; per-collection entity with creator + NFTs
+- Frontend Phase 3: Collection creation form (name, symbol); collection detail page
+- Frontend Phase 3: Mint-into-collection flow (select collection on Create page)
+
 ## Session Continuity
 
-Last session: 2026-02-21T08:45:11Z
-Stopped at: Completed 01-03-PLAN.md — Dutch auction for AuctionHouse.sol (2 tasks, 175 tests passing)
+Last session: 2026-02-21T08:53:08Z
+Stopped at: Completed 01-06-PLAN.md — deploy infrastructure and ABI update (Phase 1 complete)
 Resume file: None
