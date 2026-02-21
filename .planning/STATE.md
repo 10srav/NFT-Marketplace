@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 1 of 5 (Contract Foundation)
-Plan: 1 of 6 in current phase
+Plan: 2 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 01-01-PLAN.md (ERC-2981 royalty foundation)
+Last activity: 2026-02-21 — Completed 01-02-PLAN.md (AuctionHouse English auction contract)
 
-Progress: [█░░░░░░░░░] 4% (1/26 total plans estimated)
+Progress: [██░░░░░░░░] 8% (2/26 total plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 1
+- Total plans completed: 2
 - Average duration: 4 min
-- Total execution time: 4 min
+- Total execution time: 8 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-contract-foundation | 1/6 | 4 min | 4 min |
+| 01-contract-foundation | 2/6 | 8 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 4 min
-- Trend: —
+- Last 5 plans: 4 min, 4 min
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -50,6 +50,10 @@ Recent decisions affecting current work:
 - [01-01]: mintNFT signature changed to 2-arg: mintNFT(string tokenURI, uint96 royaltyBps) — BREAKING CHANGE for frontend Create page and any existing deploy scripts
 - [01-01]: activeListingByToken reverse mapping added in 01-01 (not deferred to 01-05) — touched same code paths, cleaner to do together
 - [01-01]: _deductFeesAndPay is the canonical settlement function — all downstream plans (01-02, 01-03, 01-05) must use this pattern for royalty payment
+- [01-02]: IERC721Receiver implemented on AuctionHouse — safeTransferFrom escrow requires it; plain transferFrom would bypass approval checks
+- [01-02]: _deductFeesAndPay copied verbatim from Marketplace.sol — per-contract copy, no shared library (RESEARCH.md recommendation)
+- [01-02]: settleAuction is permissionless (any caller) — prevents stuck auctions if seller/winner is unresponsive
+- [01-02]: Anti-snipe is additive (endTime += EXTENSION, not reset to now+10min) — preserves original end-time contract integrity
 
 ### Pending Todos
 
@@ -64,6 +68,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-21T08:25:55Z
-Stopped at: Completed 01-01-PLAN.md — ERC-2981 royalty foundation (2 tasks, 42 tests passing)
+Last session: 2026-02-21T08:33:20Z
+Stopped at: Completed 01-02-PLAN.md — AuctionHouse English auction contract (2 tasks, 86 tests passing)
 Resume file: None
