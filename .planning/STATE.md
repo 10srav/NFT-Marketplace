@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 1 of 5 (Contract Foundation)
-Plan: 0 of 6 in current phase
-Status: Ready to plan
-Last activity: 2026-02-21 — Roadmap created; all 5 phases defined, 64 requirements mapped
+Plan: 1 of 6 in current phase
+Status: In progress
+Last activity: 2026-02-21 — Completed 01-01-PLAN.md (ERC-2981 royalty foundation)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█░░░░░░░░░] 4% (1/26 total plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0
-- Average duration: —
-- Total execution time: 0 hours
+- Total plans completed: 1
+- Average duration: 4 min
+- Total execution time: 4 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 01-contract-foundation | 1/6 | 4 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: —
+- Last 5 plans: 4 min
 - Trend: —
 
 *Updated after each plan completion*
@@ -46,10 +46,15 @@ Recent decisions affecting current work:
 - [Roadmap]: AuctionHouse.sol custom contract (no viable third-party library for OZ v5); pull-payment pattern required to prevent bid reentrancy (P-04)
 - [Roadmap]: CollectionFactory.sol uses EIP-1167 minimal proxies — gas-efficient, each collection gets its own address for subgraph entity isolation
 - [Roadmap]: Backend is read accelerator only — never financial authority; all purchase/auction state must be verified against contract before any transaction (P-14)
+- [01-01]: Use ERC2981 directly (not ERC721Royalty) — avoids supportsInterface diamond conflict with ERC721URIStorage in OZ v5
+- [01-01]: mintNFT signature changed to 2-arg: mintNFT(string tokenURI, uint96 royaltyBps) — BREAKING CHANGE for frontend Create page and any existing deploy scripts
+- [01-01]: activeListingByToken reverse mapping added in 01-01 (not deferred to 01-05) — touched same code paths, cleaner to do together
+- [01-01]: _deductFeesAndPay is the canonical settlement function — all downstream plans (01-02, 01-03, 01-05) must use this pattern for royalty payment
 
 ### Pending Todos
 
-None yet.
+- Frontend: mintNFT calls in Create page must be updated to pass royaltyBps (default 0 until UI input is added in Phase 3)
+- Frontend: ItemSold event listener must handle new 5-arg signature (added royalty field)
 
 ### Blockers/Concerns
 
@@ -59,6 +64,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-21
-Stopped at: Roadmap and STATE.md created; REQUIREMENTS.md traceability updated
+Last session: 2026-02-21T08:25:55Z
+Stopped at: Completed 01-01-PLAN.md — ERC-2981 royalty foundation (2 tasks, 42 tests passing)
 Resume file: None
