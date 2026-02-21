@@ -12,7 +12,7 @@ This roadmap extends a working ERC721 fixed-price marketplace MVP into a full-fe
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Contract Foundation** - Deploy all new Solidity contracts (royalties, auctions, collections, offers) with full test coverage
+- [x] **Phase 1: Contract Foundation** - Deploy all new Solidity contracts (royalties, auctions, collections, offers) with full test coverage
 - [ ] **Phase 2: Subgraph Indexing** - Index all contract events into a queryable GraphQL entity store via The Graph
 - [ ] **Phase 3: Backend API** - Fastify + PostgreSQL service for profiles, favorites, metadata cache, and full-text search
 - [ ] **Phase 4: Real-Time Updates** - WebSocket push server for live auction bids, listing changes, and transaction progress
@@ -33,12 +33,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 6 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — NFTContract.sol ERC-2981 royalties + Marketplace.sol royalty payment in buyItem
-- [ ] 01-02-PLAN.md — AuctionHouse.sol English auction (pull-payment, anti-sniping, NFT escrow, royalty settlement)
-- [ ] 01-03-PLAN.md — AuctionHouse.sol Dutch auction (linear price decay, first-buyer-wins, royalty settlement)
-- [ ] 01-04-PLAN.md — CollectionFactory.sol + Collection.sol EIP-1167 clone factory with marketplace compatibility
-- [ ] 01-05-PLAN.md — Marketplace.sol offer system (escrowed ETH, accept/reject/cancel/expire, auto-unlist)
-- [ ] 01-06-PLAN.md — Deploy script, Etherscan verification config, deployments registry, frontend ABI updates
+- [x] 01-01-PLAN.md — NFTContract.sol ERC-2981 royalties + Marketplace.sol royalty payment in buyItem
+- [x] 01-02-PLAN.md — AuctionHouse.sol English auction (pull-payment, anti-sniping, NFT escrow, royalty settlement)
+- [x] 01-03-PLAN.md — AuctionHouse.sol Dutch auction (linear price decay, first-buyer-wins, royalty settlement)
+- [x] 01-04-PLAN.md — CollectionFactory.sol + Collection.sol EIP-1167 clone factory with marketplace compatibility
+- [x] 01-05-PLAN.md — Marketplace.sol offer system (escrowed ETH, accept/reject/cancel/expire, auto-unlist)
+- [x] 01-06-PLAN.md — Deploy script, Etherscan verification config, deployments registry, frontend ABI updates
 
 ### Phase 2: Subgraph Indexing
 **Goal**: All on-chain events from all four contracts are indexed into a queryable GraphQL entity store on Subgraph Studio, and the frontend reads marketplace listings from the subgraph instead of direct RPC calls
@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Contract Foundation | 0/6 | Planned | - |
+| 1. Contract Foundation | 6/6 | Complete | 2026-02-21 |
 | 2. Subgraph Indexing | 0/5 | Not started | - |
 | 3. Backend API | 0/6 | Not started | - |
 | 4. Real-Time Updates | 0/3 | Not started | - |

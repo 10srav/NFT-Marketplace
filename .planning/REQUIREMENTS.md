@@ -7,44 +7,44 @@
 
 ### Smart Contracts — Royalties
 
-- [ ] **ROYL-01**: Creator can set royalty percentage (up to 10%) when minting an NFT
-- [ ] **ROYL-02**: Marketplace automatically pays royalty to creator on every secondary sale
-- [ ] **ROYL-03**: Royalty info follows ERC-2981 standard and is readable by any marketplace
-- [ ] **ROYL-04**: Combined royalty + commission never exceeds a safe cap
+- [x] **ROYL-01**: Creator can set royalty percentage (up to 10%) when minting an NFT
+- [x] **ROYL-02**: Marketplace automatically pays royalty to creator on every secondary sale
+- [x] **ROYL-03**: Royalty info follows ERC-2981 standard and is readable by any marketplace
+- [x] **ROYL-04**: Combined royalty + commission never exceeds a safe cap
 
 ### Smart Contracts — English Auctions
 
-- [ ] **EAUC-01**: Seller can create a timed English auction with minimum bid and duration
-- [ ] **EAUC-02**: Buyers can place bids that must exceed current highest bid
-- [ ] **EAUC-03**: Previous bidders are automatically refunded when outbid (pull-over-push pattern)
-- [ ] **EAUC-04**: Anti-sniping: bids in last 10 minutes extend the auction timer
-- [ ] **EAUC-05**: Anyone can settle an expired auction, transferring NFT to winner and ETH to seller
-- [ ] **EAUC-06**: Seller can cancel auction if no bids have been placed
-- [ ] **EAUC-07**: Marketplace commission deducted from auction settlement
+- [x] **EAUC-01**: Seller can create a timed English auction with minimum bid and duration
+- [x] **EAUC-02**: Buyers can place bids that must exceed current highest bid
+- [x] **EAUC-03**: Previous bidders are automatically refunded when outbid (pull-over-push pattern)
+- [x] **EAUC-04**: Anti-sniping: bids in last 10 minutes extend the auction timer
+- [x] **EAUC-05**: Anyone can settle an expired auction, transferring NFT to winner and ETH to seller
+- [x] **EAUC-06**: Seller can cancel auction if no bids have been placed
+- [x] **EAUC-07**: Marketplace commission deducted from auction settlement
 
 ### Smart Contracts — Dutch Auctions
 
-- [ ] **DAUC-01**: Seller can create a Dutch auction with start price, end price, and duration
-- [ ] **DAUC-02**: Price decreases linearly over time (computed via view function, no storage writes)
-- [ ] **DAUC-03**: First buyer to pay current price wins the NFT immediately
-- [ ] **DAUC-04**: Seller can cancel an unsold Dutch auction
-- [ ] **DAUC-05**: Marketplace commission deducted from Dutch auction sale
+- [x] **DAUC-01**: Seller can create a Dutch auction with start price, end price, and duration
+- [x] **DAUC-02**: Price decreases linearly over time (computed via view function, no storage writes)
+- [x] **DAUC-03**: First buyer to pay current price wins the NFT immediately
+- [x] **DAUC-04**: Seller can cancel an unsold Dutch auction
+- [x] **DAUC-05**: Marketplace commission deducted from Dutch auction sale
 
 ### Smart Contracts — Creator Collections
 
-- [ ] **COLL-01**: User can create a named collection with description and image
-- [ ] **COLL-02**: Collection deploys a new ERC721 contract via factory (EIP-1167 minimal proxy)
-- [ ] **COLL-03**: Creator can mint NFTs into their collection
-- [ ] **COLL-04**: Collection NFTs are tradeable on the marketplace like standalone NFTs
-- [ ] **COLL-05**: Users can browse all NFTs within a collection
+- [x] **COLL-01**: User can create a named collection with description and image
+- [x] **COLL-02**: Collection deploys a new ERC721 contract via factory (EIP-1167 minimal proxy)
+- [x] **COLL-03**: Creator can mint NFTs into their collection
+- [x] **COLL-04**: Collection NFTs are tradeable on the marketplace like standalone NFTs
+- [x] **COLL-05**: Users can browse all NFTs within a collection
 
 ### Smart Contracts — Offers
 
-- [ ] **OFFR-01**: Buyer can make an ETH offer on any NFT (escrowed in contract)
-- [ ] **OFFR-02**: Seller can accept an offer, triggering NFT transfer and ETH release
-- [ ] **OFFR-03**: Seller can reject an offer, refunding the buyer
-- [ ] **OFFR-04**: Buyer can cancel their own pending offer and get refunded
-- [ ] **OFFR-05**: Offer expires after a seller-configurable or default timeout
+- [x] **OFFR-01**: Buyer can make an ETH offer on any NFT (escrowed in contract)
+- [x] **OFFR-02**: Seller can accept an offer, triggering NFT transfer and ETH release
+- [x] **OFFR-03**: Seller can reject an offer, refunding the buyer
+- [x] **OFFR-04**: Buyer can cancel their own pending offer and get refunded
+- [x] **OFFR-05**: Offer expires after a seller-configurable or default timeout
 
 ### User Profiles
 
@@ -146,32 +146,32 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROYL-01 | Phase 1 | Pending |
-| ROYL-02 | Phase 1 | Pending |
-| ROYL-03 | Phase 1 | Pending |
-| ROYL-04 | Phase 1 | Pending |
-| EAUC-01 | Phase 1 | Pending |
-| EAUC-02 | Phase 1 | Pending |
-| EAUC-03 | Phase 1 | Pending |
-| EAUC-04 | Phase 1 | Pending |
-| EAUC-05 | Phase 1 | Pending |
-| EAUC-06 | Phase 1 | Pending |
-| EAUC-07 | Phase 1 | Pending |
-| DAUC-01 | Phase 1 | Pending |
-| DAUC-02 | Phase 1 | Pending |
-| DAUC-03 | Phase 1 | Pending |
-| DAUC-04 | Phase 1 | Pending |
-| DAUC-05 | Phase 1 | Pending |
-| COLL-01 | Phase 1 | Pending |
-| COLL-02 | Phase 1 | Pending |
-| COLL-03 | Phase 1 | Pending |
-| COLL-04 | Phase 1 | Pending |
-| COLL-05 | Phase 1 | Pending |
-| OFFR-01 | Phase 1 | Pending |
-| OFFR-02 | Phase 1 | Pending |
-| OFFR-03 | Phase 1 | Pending |
-| OFFR-04 | Phase 1 | Pending |
-| OFFR-05 | Phase 1 | Pending |
+| ROYL-01 | Phase 1 | Complete |
+| ROYL-02 | Phase 1 | Complete |
+| ROYL-03 | Phase 1 | Complete |
+| ROYL-04 | Phase 1 | Complete |
+| EAUC-01 | Phase 1 | Complete |
+| EAUC-02 | Phase 1 | Complete |
+| EAUC-03 | Phase 1 | Complete |
+| EAUC-04 | Phase 1 | Complete |
+| EAUC-05 | Phase 1 | Complete |
+| EAUC-06 | Phase 1 | Complete |
+| EAUC-07 | Phase 1 | Complete |
+| DAUC-01 | Phase 1 | Complete |
+| DAUC-02 | Phase 1 | Complete |
+| DAUC-03 | Phase 1 | Complete |
+| DAUC-04 | Phase 1 | Complete |
+| DAUC-05 | Phase 1 | Complete |
+| COLL-01 | Phase 1 | Complete |
+| COLL-02 | Phase 1 | Complete |
+| COLL-03 | Phase 1 | Complete |
+| COLL-04 | Phase 1 | Complete |
+| COLL-05 | Phase 1 | Complete |
+| OFFR-01 | Phase 1 | Complete |
+| OFFR-02 | Phase 1 | Complete |
+| OFFR-03 | Phase 1 | Complete |
+| OFFR-04 | Phase 1 | Complete |
+| OFFR-05 | Phase 1 | Complete |
 | INDX-01 | Phase 2 | Pending |
 | INDX-02 | Phase 2 | Pending |
 | INDX-03 | Phase 2 | Pending |
