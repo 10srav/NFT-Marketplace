@@ -144,17 +144,78 @@
 
 ## Traceability
 
-(To be populated during roadmap creation)
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| — | — | — |
+| ROYL-01 | Phase 1 | Pending |
+| ROYL-02 | Phase 1 | Pending |
+| ROYL-03 | Phase 1 | Pending |
+| ROYL-04 | Phase 1 | Pending |
+| EAUC-01 | Phase 1 | Pending |
+| EAUC-02 | Phase 1 | Pending |
+| EAUC-03 | Phase 1 | Pending |
+| EAUC-04 | Phase 1 | Pending |
+| EAUC-05 | Phase 1 | Pending |
+| EAUC-06 | Phase 1 | Pending |
+| EAUC-07 | Phase 1 | Pending |
+| DAUC-01 | Phase 1 | Pending |
+| DAUC-02 | Phase 1 | Pending |
+| DAUC-03 | Phase 1 | Pending |
+| DAUC-04 | Phase 1 | Pending |
+| DAUC-05 | Phase 1 | Pending |
+| COLL-01 | Phase 1 | Pending |
+| COLL-02 | Phase 1 | Pending |
+| COLL-03 | Phase 1 | Pending |
+| COLL-04 | Phase 1 | Pending |
+| COLL-05 | Phase 1 | Pending |
+| OFFR-01 | Phase 1 | Pending |
+| OFFR-02 | Phase 1 | Pending |
+| OFFR-03 | Phase 1 | Pending |
+| OFFR-04 | Phase 1 | Pending |
+| OFFR-05 | Phase 1 | Pending |
+| INDX-01 | Phase 2 | Pending |
+| INDX-02 | Phase 2 | Pending |
+| INDX-03 | Phase 2 | Pending |
+| INDX-04 | Phase 2 | Pending |
+| INDX-05 | Phase 2 | Pending |
+| BACK-01 | Phase 3 | Pending |
+| BACK-02 | Phase 3 | Pending |
+| BACK-03 | Phase 3 | Pending |
+| BACK-04 | Phase 3 | Pending |
+| BACK-05 | Phase 3 | Pending |
+| BACK-06 | Phase 3 | Pending |
+| PROF-01 | Phase 3 | Pending |
+| PROF-02 | Phase 3 | Pending |
+| PROF-03 | Phase 3 | Pending |
+| PROF-04 | Phase 3 | Pending |
+| FAVS-01 | Phase 3 | Pending |
+| FAVS-02 | Phase 3 | Pending |
+| FAVS-03 | Phase 3 | Pending |
+| FAVS-04 | Phase 3 | Pending |
+| RT-01 | Phase 4 | Pending |
+| RT-02 | Phase 4 | Pending |
+| RT-03 | Phase 4 | Pending |
+| RT-04 | Phase 4 | Pending |
+| DISC-01 | Phase 5 | Pending |
+| DISC-02 | Phase 5 | Pending |
+| DISC-03 | Phase 5 | Pending |
+| DISC-04 | Phase 5 | Pending |
+| UX-01 | Phase 5 | Pending |
+| UX-02 | Phase 5 | Pending |
+| UX-03 | Phase 5 | Pending |
+| UX-04 | Phase 5 | Pending |
+| UX-05 | Phase 5 | Pending |
+| UX-06 | Phase 5 | Pending |
+| DEPL-01 | Phase 5 | Pending |
+| DEPL-02 | Phase 5 | Pending |
+| DEPL-03 | Phase 5 | Pending |
+| DEPL-04 | Phase 5 | Pending |
+| DEPL-05 | Phase 5 | Pending |
 
 **Coverage:**
-- v1 requirements: 60 total
-- Mapped to phases: 0
-- Unmapped: 60
+- v1 requirements: 64 total
+- Mapped to phases: 64
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-21*
-*Last updated: 2026-02-21 after initial definition*
+*Last updated: 2026-02-21 after roadmap creation*
