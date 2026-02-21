@@ -30,15 +30,15 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can deploy a named collection via the factory, mint NFTs into it, and those NFTs appear on the marketplace and are purchasable like standalone NFTs
   4. Buyer can make an ETH offer on any NFT (escrowed), seller can accept or reject it, buyer can cancel a pending offer — and accepting an offer cancels any active fixed-price listing for that NFT
   5. Royalty is paid to the original creator on every secondary sale path (fixed-price buy, English auction settlement, Dutch auction sale, offer acceptance), and the combined royalty + commission never overflows safe limits
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] 01-01: NFTContract.sol — add ERC-2981 royalties (ERC721Royalty), redeploy, update deployments/sepolia.json and contracts.ts
-- [ ] 01-02: AuctionHouse.sol — English auction (pull-payment, anti-sniping, NFT escrow, royalty in settlement), Hardhat tests
-- [ ] 01-03: AuctionHouse.sol — Dutch auction (linear price decay view function, first-buyer wins, royalty in settlement), Hardhat tests
-- [ ] 01-04: CollectionFactory.sol — EIP-1167 clone factory for per-creator ERC721 collections, marketplace compatibility, Hardhat tests
-- [ ] 01-05: Marketplace.sol — offer system (escrowed ETH, accept/reject/cancel/expire, unlist on accept), Hardhat tests
-- [ ] 01-06: Deploy all contracts to Sepolia, verify on Etherscan, update deployments/sepolia.json, fix MVP bugs (reload-on-buy, sequential metadata fetch)
+- [ ] 01-01-PLAN.md — NFTContract.sol ERC-2981 royalties + Marketplace.sol royalty payment in buyItem
+- [ ] 01-02-PLAN.md — AuctionHouse.sol English auction (pull-payment, anti-sniping, NFT escrow, royalty settlement)
+- [ ] 01-03-PLAN.md — AuctionHouse.sol Dutch auction (linear price decay, first-buyer-wins, royalty settlement)
+- [ ] 01-04-PLAN.md — CollectionFactory.sol + Collection.sol EIP-1167 clone factory with marketplace compatibility
+- [ ] 01-05-PLAN.md — Marketplace.sol offer system (escrowed ETH, accept/reject/cancel/expire, auto-unlist)
+- [ ] 01-06-PLAN.md — Deploy script, Etherscan verification config, deployments registry, frontend ABI updates
 
 ### Phase 2: Subgraph Indexing
 **Goal**: All on-chain events from all four contracts are indexed into a queryable GraphQL entity store on Subgraph Studio, and the frontend reads marketplace listings from the subgraph instead of direct RPC calls
@@ -123,7 +123,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Contract Foundation | 0/6 | Not started | - |
+| 1. Contract Foundation | 0/6 | Planned | - |
 | 2. Subgraph Indexing | 0/5 | Not started | - |
 | 3. Backend API | 0/6 | Not started | - |
 | 4. Real-Time Updates | 0/3 | Not started | - |
