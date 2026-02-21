@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 1 of 5 (Contract Foundation)
-Plan: 5 of 6 in current phase
+Plan: 6 of 6 in current phase (01-03 complete; note: plans completed out of linear order)
 Status: In progress
-Last activity: 2026-02-21 — Completed 01-05-PLAN.md (Offer/escrow system for Marketplace.sol)
+Last activity: 2026-02-21 — Completed 01-03-PLAN.md (Dutch auction for AuctionHouse.sol)
 
-Progress: [█████░░░░░] 19% (5/26 total plans estimated)
+Progress: [██████░░░░] 23% (6/26 total plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 4 min
-- Total execution time: 21 min
+- Total execution time: 26 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-contract-foundation | 5/6 | 21 min | 4 min |
+| 01-contract-foundation | 6/6 | 26 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 4 min, 4 min, 4 min, 4 min, 5 min
+- Last 5 plans: 4 min, 4 min, 4 min, 5 min, 5 min
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -54,6 +54,8 @@ Recent decisions affecting current work:
 - [01-02]: _deductFeesAndPay copied verbatim from Marketplace.sol — per-contract copy, no shared library (RESEARCH.md recommendation)
 - [01-02]: settleAuction is permissionless (any caller) — prevents stuck auctions if seller/winner is unresponsive
 - [01-02]: Anti-snipe is additive (endTime += EXTENSION, not reset to now+10min) — preserves original end-time contract integrity
+- [01-03]: getCurrentPrice is public view (reads storage) not pure — correct Solidity modifier for decay formula
+- [01-03]: time.setNextBlockTimestamp pins buy transaction timestamp in tests — eliminates block-drift price discrepancy in payment assertions
 - [01-04]: Store name/symbol in private string slots and override ERC721 name()/symbol() — avoids contracts-upgradeable dependency while supporting EIP-1167 clones
 - [01-04]: mintNFT is onlyOwner in Collection.sol (not public) — only collection creator/owner can mint into their collection
 - [01-04]: Royalty receiver is msg.sender at mint time (collection owner) — royalties always flow to the creator who minted
@@ -80,8 +82,15 @@ Recent decisions affecting current work:
 - Frontend: cancelOffer on Dashboard — buyer sees their pending offers with cancel button
 - Subgraph (Phase 2): Index OfferMade, OfferAccepted, OfferRejected, OfferCancelled events
 
+### Pending Todos (Dutch Auction)
+
+- Subgraph (Phase 2): Index DutchAuctionCreated, DutchAuctionSold, DutchAuctionCancelled events
+- Frontend Phase 3: Dutch auction create form (startPrice, endPrice, duration inputs)
+- Frontend Phase 3: Countdown price display using getCurrentPrice view
+- Backend Phase 4: Expose dutchAuctions mapping + getCurrentPrice via REST read endpoints
+
 ## Session Continuity
 
-Last session: 2026-02-21T08:35:00Z
-Stopped at: Completed 01-05-PLAN.md — Offer/escrow system for Marketplace.sol (2 tasks, 155 tests passing)
+Last session: 2026-02-21T08:45:11Z
+Stopped at: Completed 01-03-PLAN.md — Dutch auction for AuctionHouse.sol (2 tasks, 175 tests passing)
 Resume file: None
