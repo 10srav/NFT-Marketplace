@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-21)
 ## Current Position
 
 Phase: 1 of 5 (Contract Foundation)
-Plan: 2 of 6 in current phase
+Plan: 4 of 6 in current phase
 Status: In progress
-Last activity: 2026-02-21 — Completed 01-02-PLAN.md (AuctionHouse English auction contract)
+Last activity: 2026-02-21 — Completed 01-04-PLAN.md (CollectionFactory + Collection EIP-1167 clone factory)
 
-Progress: [██░░░░░░░░] 8% (2/26 total plans estimated)
+Progress: [████░░░░░░] 15% (4/26 total plans estimated)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 4
 - Average duration: 4 min
-- Total execution time: 8 min
+- Total execution time: 16 min
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-contract-foundation | 2/6 | 8 min | 4 min |
+| 01-contract-foundation | 4/6 | 16 min | 4 min |
 
 **Recent Trend:**
-- Last 5 plans: 4 min, 4 min
+- Last 5 plans: 4 min, 4 min, 4 min, 4 min
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -54,6 +54,10 @@ Recent decisions affecting current work:
 - [01-02]: _deductFeesAndPay copied verbatim from Marketplace.sol — per-contract copy, no shared library (RESEARCH.md recommendation)
 - [01-02]: settleAuction is permissionless (any caller) — prevents stuck auctions if seller/winner is unresponsive
 - [01-02]: Anti-snipe is additive (endTime += EXTENSION, not reset to now+10min) — preserves original end-time contract integrity
+- [01-04]: Store name/symbol in private string slots and override ERC721 name()/symbol() — avoids contracts-upgradeable dependency while supporting EIP-1167 clones
+- [01-04]: mintNFT is onlyOwner in Collection.sol (not public) — only collection creator/owner can mint into their collection
+- [01-04]: Royalty receiver is msg.sender at mint time (collection owner) — royalties always flow to the creator who minted
+- [01-04]: CollectionCreated event emits both name and symbol — enables subgraph indexing without extra contract calls in Phase 2
 
 ### Pending Todos
 
@@ -68,6 +72,6 @@ Recent decisions affecting current work:
 
 ## Session Continuity
 
-Last session: 2026-02-21T08:33:20Z
-Stopped at: Completed 01-02-PLAN.md — AuctionHouse English auction contract (2 tasks, 86 tests passing)
+Last session: 2026-02-21T08:33:52Z
+Stopped at: Completed 01-04-PLAN.md — CollectionFactory + Collection EIP-1167 clone factory (2 tasks, 118 tests passing)
 Resume file: None
