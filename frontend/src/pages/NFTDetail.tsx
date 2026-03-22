@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
     Typography,
@@ -17,6 +17,11 @@ import {
     TagOutlined,
     ArrowLeftOutlined,
     LinkOutlined,
+    UserOutlined,
+    NumberOutlined,
+    FileTextOutlined,
+    ShareAltOutlined,
+    CheckCircleOutlined,
 } from "@ant-design/icons";
 import { formatEther } from "ethers";
 import ListingModal from "../components/ListingModal";
@@ -40,6 +45,9 @@ interface NFTData {
     };
 }
 
+const FALLBACK_SVG =
+    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%23667eea'/%3E%3Cstop offset='100%25' stop-color='%23764ba2'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='400' fill='%2312121a'/%3E%3Cpolygon points='200,80 320,200 200,320 80,200' fill='none' stroke='url(%23g)' stroke-width='3'/%3E%3Cpolygon points='200,130 270,200 200,270 130,200' fill='url(%23g)' opacity='0.15'/%3E%3C/svg%3E";
+
 export default function NFTDetail() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -49,61 +57,65 @@ export default function NFTDetail() {
     const [nft, setNft] = useState<NFTData | null>(null);
     const [loading, setLoading] = useState(true);
     const [listingModal, setListingModal] = useState(false);
+    const [imageHovered, setImageHovered] = useState(false);
+    const [buying, setBuying] = useState(false);
+    const [unlisting, setUnlisting] = useState(false);
 
-    useEffect(() => {
-        const fetchNFT = async () => {
-            if (!nftContract || !id) return;
-            setLoading(true);
+    const fetchNFT = useCallback(async () => {
+        if (!nftContract || !id) return;
+        setLoading(true);
+        try {
+            const contract = await nftContract;
+            const tokenId = parseInt(id);
+            const owner = await contract.ownerOf(tokenId);
+            const tokenURI = await contract.tokenURI(tokenId);
+
+            let name = `NFT #${tokenId}`;
+            let description = "";
+            let image = "";
+
             try {
-                const contract = await nftContract;
-                const tokenId = parseInt(id);
-                const owner = await contract.ownerOf(tokenId);
-                const tokenURI = await contract.tokenURI(tokenId);
+                const metaUrl = ipfsToHttp(tokenURI);
+                const res = await fetch(metaUrl);
+                const meta = await res.json();
+                name = meta.name || name;
+                description = meta.description || "";
+                image = meta.image || "";
+            } catch { /* use defaults */ }
 
-                let name = `NFT #${tokenId}`;
-                let description = "";
-                let image = "";
-
-                try {
-                    const metaUrl = ipfsToHttp(tokenURI);
-                    const res = await fetch(metaUrl);
-                    const meta = await res.json();
-                    name = meta.name || name;
-                    description = meta.description || "";
-                    image = meta.image || "";
-                } catch { /* use defaults */ }
-
-                // Check if listed on marketplace
-                let listing;
-                if (marketplaceContract) {
-                    const marketplace = await marketplaceContract;
-                    const activeIds: bigint[] = await marketplace.getActiveListingIds();
-                    for (const lid of activeIds) {
-                        const l = await marketplace.listings(lid);
-                        if (Number(l.tokenId) === tokenId && l.active) {
-                            listing = {
-                                listingId: Number(l.listingId),
-                                price: l.price,
-                                seller: l.seller,
-                            };
-                            break;
-                        }
+            // Check if listed on marketplace
+            let listing;
+            if (marketplaceContract) {
+                const marketplace = await marketplaceContract;
+                const activeIds: bigint[] = await marketplace.getActiveListingIds();
+                for (const lid of activeIds) {
+                    const l = await marketplace.listings(lid);
+                    if (Number(l.tokenId) === tokenId && l.active) {
+                        listing = {
+                            listingId: Number(l.listingId),
+                            price: l.price,
+                            seller: l.seller,
+                        };
+                        break;
                     }
                 }
-
-                setNft({ tokenId, name, description, image, owner, tokenURI, listing });
-            } catch (err) {
-                console.error("Fetch NFT error:", err);
-            } finally {
-                setLoading(false);
             }
-        };
 
+            setNft({ tokenId, name, description, image, owner, tokenURI, listing });
+        } catch (err) {
+            console.error("Fetch NFT error:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, [nftContract, marketplaceContract, id]);
+
+    useEffect(() => {
         if (isConnected) fetchNFT();
-    }, [nftContract, marketplaceContract, id, isConnected]);
+    }, [isConnected, fetchNFT]);
 
     const handleBuy = async () => {
         if (!marketplaceContract || !nft?.listing) return;
+        setBuying(true);
         try {
             const marketplace = await marketplaceContract;
             message.loading({ content: "Processing purchase...", key: "buy" });
@@ -111,30 +123,44 @@ export default function NFTDetail() {
                 value: nft.listing.price,
             });
             await tx.wait();
-            message.success({ content: "NFT purchased! 🎉", key: "buy" });
-            window.location.reload();
+            message.success({ content: "NFT purchased successfully", key: "buy" });
+            fetchNFT();
         } catch (err: any) {
             message.error({
                 content: err.reason || err.message || "Purchase failed",
                 key: "buy",
             });
+        } finally {
+            setBuying(false);
         }
     };
 
     const handleUnlist = async () => {
         if (!marketplaceContract || !nft?.listing) return;
+        setUnlisting(true);
         try {
             const marketplace = await marketplaceContract;
             message.loading({ content: "Unlisting...", key: "unlist" });
             const tx = await marketplace.unlistItem(nft.listing.listingId);
             await tx.wait();
-            message.success({ content: "NFT unlisted!", key: "unlist" });
-            window.location.reload();
+            message.success({ content: "NFT unlisted successfully", key: "unlist" });
+            fetchNFT();
         } catch (err: any) {
             message.error({
                 content: err.reason || err.message || "Unlisting failed",
                 key: "unlist",
             });
+        } finally {
+            setUnlisting(false);
+        }
+    };
+
+    const handleShare = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            message.success({ content: "Link copied to clipboard", key: "share" });
+        } catch {
+            message.error({ content: "Failed to copy link", key: "share" });
         }
     };
 
@@ -164,14 +190,26 @@ export default function NFTDetail() {
 
     return (
         <div style={{ padding: "40px 24px", maxWidth: 1100, margin: "0 auto" }}>
-            <Button
-                type="text"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate(-1)}
-                style={{ color: "#a0a0b0", marginBottom: 24 }}
-            >
-                Back
-            </Button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                <Button
+                    type="text"
+                    icon={<ArrowLeftOutlined />}
+                    onClick={() => navigate(-1)}
+                    style={{ color: "#a0a0b0" }}
+                    aria-label="Go back to previous page"
+                >
+                    Back
+                </Button>
+                <Button
+                    type="text"
+                    icon={<ShareAltOutlined />}
+                    onClick={handleShare}
+                    style={{ color: "#a0a0b0" }}
+                    aria-label="Copy link to clipboard"
+                >
+                    Share
+                </Button>
+            </div>
 
             <Row gutter={[40, 40]}>
                 {/* Image */}
@@ -188,15 +226,19 @@ export default function NFTDetail() {
                         <img
                             src={ipfsToHttp(nft.image)}
                             alt={nft.name}
+                            loading="lazy"
+                            onMouseEnter={() => setImageHovered(true)}
+                            onMouseLeave={() => setImageHovered(false)}
                             style={{
                                 width: "100%",
                                 minHeight: 400,
                                 objectFit: "cover",
                                 display: "block",
+                                transition: "transform 0.35s ease",
+                                transform: imageHovered ? "scale(1.05)" : "scale(1)",
                             }}
                             onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                    "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' fill='%23333'%3E%3Crect width='400' height='400' fill='%2312121a'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-size='80' fill='%23667eea'%3E🖼️%3C/text%3E%3C/svg%3E";
+                                (e.target as HTMLImageElement).src = FALLBACK_SVG;
                             }}
                         />
                     </Card>
@@ -256,7 +298,9 @@ export default function NFTDetail() {
                                             block
                                             danger
                                             onClick={handleUnlist}
+                                            loading={unlisting}
                                             style={{ borderRadius: 8, height: 44 }}
+                                            aria-label="Unlist this NFT from the marketplace"
                                         >
                                             Unlist NFT
                                         </Button>
@@ -267,6 +311,7 @@ export default function NFTDetail() {
                                             size="large"
                                             icon={<ShoppingCartOutlined />}
                                             onClick={handleBuy}
+                                            loading={buying}
                                             style={{
                                                 background:
                                                     "linear-gradient(135deg, #667eea, #764ba2)",
@@ -275,6 +320,7 @@ export default function NFTDetail() {
                                                 fontWeight: 700,
                                                 height: 48,
                                             }}
+                                            aria-label={`Buy this NFT for ${parseFloat(formatEther(nft.listing.price)).toFixed(4)} ETH`}
                                         >
                                             Buy Now
                                         </Button>
@@ -316,13 +362,27 @@ export default function NFTDetail() {
                             labelStyle={{ color: "#a0a0b0", background: "rgba(255,255,255,0.02)" }}
                             contentStyle={{ color: "#fff", background: "rgba(255,255,255,0.01)" }}
                         >
-                            <Descriptions.Item label="Owner">
-                                {nft.owner.slice(0, 6)}...{nft.owner.slice(-4)}
+                            <Descriptions.Item label={<span><UserOutlined style={{ marginRight: 6 }} />Owner</span>}>
+                                {isOwner ? (
+                                    <Tag
+                                        icon={<CheckCircleOutlined />}
+                                        style={{
+                                            background: "rgba(102,126,234,0.15)",
+                                            border: "1px solid rgba(102,126,234,0.3)",
+                                            color: "#667eea",
+                                            borderRadius: 6,
+                                        }}
+                                    >
+                                        Owned by you
+                                    </Tag>
+                                ) : (
+                                    <span>{nft.owner.slice(0, 6)}...{nft.owner.slice(-4)}</span>
+                                )}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Token ID">
+                            <Descriptions.Item label={<span><NumberOutlined style={{ marginRight: 6 }} />Token ID</span>}>
                                 {nft.tokenId}
                             </Descriptions.Item>
-                            <Descriptions.Item label="Token URI">
+                            <Descriptions.Item label={<span><FileTextOutlined style={{ marginRight: 6 }} />Token URI</span>}>
                                 <a
                                     href={ipfsToHttp(nft.tokenURI)}
                                     target="_blank"

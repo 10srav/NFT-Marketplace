@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { Row, Col, Typography, Input, Select, Spin, Empty, message } from "antd";
-import { SearchOutlined } from "@ant-design/icons";
+import { Row, Col, Typography, Input, Select, Skeleton, Empty, Button, message } from "antd";
+import { SearchOutlined, PlusOutlined, AppstoreOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
 import NFTCard from "../components/NFTCard";
 import { useWallet } from "../hooks/useWallet";
 import { useContracts } from "../hooks/useContracts";
 import { ipfsToHttp } from "../services/ipfs";
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 interface NFTListing {
     listingId: number;
@@ -25,6 +26,7 @@ export default function Marketplace() {
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
     const [sort, setSort] = useState("newest");
+    const navigate = useNavigate();
 
     const fetchListings = useCallback(async () => {
         if (!nftContract || !marketplaceContract) return;
@@ -98,7 +100,7 @@ export default function Marketplace() {
                 value: listing.price,
             });
             await tx.wait();
-            message.success({ content: "NFT purchased! 🎉", key: "buy" });
+            message.success({ content: "NFT purchased!", key: "buy" });
             fetchListings();
         } catch (err: any) {
             message.error({
@@ -108,20 +110,64 @@ export default function Marketplace() {
         }
     };
 
+    const SkeletonGrid = () => (
+        <Row gutter={[20, 20]}>
+            {Array.from({ length: 8 }).map((_, i) => (
+                <Col xs={24} sm={12} md={8} lg={6} key={i}>
+                    <div
+                        style={{
+                            background: "rgba(255,255,255,0.03)",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                            borderRadius: 12,
+                            overflow: "hidden",
+                        }}
+                    >
+                        <Skeleton.Image
+                            active
+                            style={{
+                                width: "100%",
+                                height: 260,
+                                borderRadius: "12px 12px 0 0",
+                            }}
+                        />
+                        <div style={{ padding: 16 }}>
+                            <Skeleton
+                                active
+                                title={{ width: "70%", style: { marginBottom: 8 } }}
+                                paragraph={{ rows: 2, width: ["50%", "40%"] }}
+                            />
+                        </div>
+                    </div>
+                </Col>
+            ))}
+        </Row>
+    );
+
     return (
         <div style={{ padding: "40px 24px", maxWidth: 1200, margin: "0 auto" }}>
-            <Title level={2} style={{ color: "#fff", fontWeight: 800, marginBottom: 32 }}>
-                🛒 Marketplace
+            <Title
+                level={2}
+                style={{
+                    fontWeight: 800,
+                    marginBottom: 32,
+                    background: "linear-gradient(135deg, #667eea, #764ba2)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                }}
+            >
+                Marketplace
             </Title>
 
             {/* Filters */}
-            <Row gutter={16} style={{ marginBottom: 32 }}>
+            <Row gutter={16} style={{ marginBottom: 16 }}>
                 <Col xs={24} sm={16}>
                     <Input
                         placeholder="Search NFTs..."
                         prefix={<SearchOutlined style={{ color: "#a0a0b0" }} />}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
+                        aria-label="Search NFTs"
                         style={{
                             background: "rgba(255,255,255,0.04)",
                             border: "1px solid rgba(255,255,255,0.1)",
@@ -138,18 +184,23 @@ export default function Marketplace() {
                         style={{ width: "100%" }}
                         options={[
                             { value: "newest", label: "Newest" },
-                            { value: "price-asc", label: "Price: Low → High" },
-                            { value: "price-desc", label: "Price: High → Low" },
+                            { value: "price-asc", label: "Price: Low to High" },
+                            { value: "price-desc", label: "Price: High to Low" },
                         ]}
                     />
                 </Col>
             </Row>
 
+            {/* Results count */}
+            {!loading && (
+                <Text style={{ color: "#a0a0b0", fontSize: 14, display: "block", marginBottom: 20 }}>
+                    {filtered.length} {filtered.length === 1 ? "NFT" : "NFTs"}
+                </Text>
+            )}
+
             {/* Grid */}
             {loading ? (
-                <div style={{ textAlign: "center", padding: 80 }}>
-                    <Spin size="large" />
-                </div>
+                <SkeletonGrid />
             ) : filtered.length > 0 ? (
                 <Row gutter={[20, 20]}>
                     {filtered.map((item) => (
@@ -168,16 +219,60 @@ export default function Marketplace() {
                     ))}
                 </Row>
             ) : (
-                <Empty
-                    description={
-                        <span style={{ color: "#a0a0b0" }}>
-                            {isConnected
-                                ? "No NFTs listed yet. Be the first to create and list one!"
-                                : "Connect your wallet to browse listings"}
-                        </span>
-                    }
-                    style={{ padding: 80 }}
-                />
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "80px 24px",
+                        textAlign: "center",
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 120,
+                            height: 120,
+                            borderRadius: "50%",
+                            background: "rgba(102,126,234,0.08)",
+                            border: "1px solid rgba(102,126,234,0.15)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            marginBottom: 24,
+                        }}
+                    >
+                        <AppstoreOutlined
+                            style={{ fontSize: 48, color: "#667eea" }}
+                        />
+                    </div>
+                    <Title level={4} style={{ color: "#fff", marginBottom: 8 }}>
+                        {isConnected ? "No NFTs listed yet" : "Wallet not connected"}
+                    </Title>
+                    <Text style={{ color: "#a0a0b0", fontSize: 14, marginBottom: 24, maxWidth: 360 }}>
+                        {isConnected
+                            ? "Be the first to create and list an NFT on the marketplace."
+                            : "Connect your wallet to browse and purchase NFTs."}
+                    </Text>
+                    {isConnected && (
+                        <Button
+                            type="primary"
+                            icon={<PlusOutlined />}
+                            onClick={() => navigate("/create")}
+                            style={{
+                                background: "linear-gradient(135deg, #667eea, #764ba2)",
+                                border: "none",
+                                borderRadius: 8,
+                                height: 44,
+                                fontWeight: 600,
+                                paddingLeft: 24,
+                                paddingRight: 24,
+                            }}
+                        >
+                            Create NFT
+                        </Button>
+                    )}
+                </div>
             )}
         </div>
     );

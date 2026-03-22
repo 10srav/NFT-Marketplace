@@ -1,20 +1,21 @@
-import { Button, Typography, Row, Col, Card, Space, Statistic } from "antd";
+import { useState } from "react";
+import { Button, Typography, Row, Col, Card, Space } from "antd";
 import {
     RocketOutlined,
     ThunderboltOutlined,
     SafetyOutlined,
-    TeamOutlined,
     ShopOutlined,
     DollarOutlined,
+    EyeOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
 const { Title, Text, Paragraph } = Typography;
 
 const stats = [
-    { icon: <ShopOutlined />, value: "10K+", label: "NFTs Created" },
-    { icon: <DollarOutlined />, value: "2.5K", label: "ETH Volume" },
-    { icon: <TeamOutlined />, value: "5K+", label: "Users" },
+    { icon: <RocketOutlined />, value: "Instant", label: "Minting Speed" },
+    { icon: <DollarOutlined />, value: "2.5%", label: "Platform Fee" },
+    { icon: <EyeOutlined />, value: "100%", label: "On-Chain Transparency" },
 ];
 
 const features = [
@@ -35,13 +36,67 @@ const features = [
     },
 ];
 
+/* Checks if the user prefers reduced motion */
+function prefersReducedMotion(): boolean {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+/* Gradient border wrapper for feature cards */
+const gradientBorderStyle: React.CSSProperties = {
+    background: "linear-gradient(135deg, rgba(102,126,234,0.25), rgba(118,75,162,0.25))",
+    borderRadius: 17,
+    padding: 1,
+    height: "100%",
+};
+
+const featureCardBase: React.CSSProperties = {
+    textAlign: "center",
+    padding: "32px 20px",
+    background: "rgba(255,255,255,0.03)",
+    border: "none",
+    borderRadius: 16,
+    height: "100%",
+    transition: "transform 0.25s ease, box-shadow 0.25s ease",
+    cursor: "default",
+};
+
+function FeatureCard({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) {
+    const [hovered, setHovered] = useState(false);
+
+    return (
+        <div style={gradientBorderStyle}>
+            <Card
+                style={{
+                    ...featureCardBase,
+                    transform: hovered ? "translateY(-6px)" : "translateY(0)",
+                    boxShadow: hovered
+                        ? "0 12px 32px rgba(102,126,234,0.15)"
+                        : "0 0 0 transparent",
+                }}
+                onMouseEnter={() => setHovered(true)}
+                onMouseLeave={() => setHovered(false)}
+            >
+                <div style={{ marginBottom: 16 }}>{icon}</div>
+                <Title level={4} style={{ color: "#fff" }}>
+                    {title}
+                </Title>
+                <Text style={{ color: "#a0a0b0" }}>{desc}</Text>
+            </Card>
+        </div>
+    );
+}
+
 export default function Home() {
     const navigate = useNavigate();
+    const reducedMotion = prefersReducedMotion();
 
     return (
         <div>
             {/* ── Hero Section ── */}
             <section
+                role="banner"
+                aria-label="NFT Marketplace hero"
                 style={{
                     minHeight: "70vh",
                     display: "flex",
@@ -53,7 +108,7 @@ export default function Home() {
                     overflow: "hidden",
                 }}
             >
-                {/* Animated background gradient */}
+                {/* Animated background gradient — respects prefers-reduced-motion */}
                 <div
                     style={{
                         position: "absolute",
@@ -63,7 +118,7 @@ export default function Home() {
                         height: "200%",
                         background:
                             "radial-gradient(ellipse at 30% 50%, rgba(102,126,234,0.08) 0%, transparent 60%), radial-gradient(ellipse at 70% 50%, rgba(118,75,162,0.08) 0%, transparent 60%)",
-                        animation: "float 20s ease-in-out infinite",
+                        animation: reducedMotion ? "none" : "float 20s ease-in-out infinite",
                     }}
                 />
 
@@ -98,13 +153,15 @@ export default function Home() {
                             lineHeight: 1.7,
                         }}
                     >
-                        The premier NFT marketplace on Ethereum. Mint, list, and trade
-                        digital assets with low fees and complete transparency.
+                        A decentralized NFT marketplace built on Ethereum. Mint your art,
+                        list it for sale, and trade with confidence — all with minimal fees
+                        and full on-chain transparency.
                     </Paragraph>
-                    <Space size="large">
+                    <Space size="large" wrap>
                         <Button
                             type="primary"
                             size="large"
+                            aria-label="Explore the NFT marketplace"
                             onClick={() => navigate("/marketplace")}
                             style={{
                                 background: "linear-gradient(135deg, #667eea, #764ba2)",
@@ -120,6 +177,7 @@ export default function Home() {
                         </Button>
                         <Button
                             size="large"
+                            aria-label="Create a new NFT"
                             onClick={() => navigate("/create")}
                             style={{
                                 borderRadius: 12,
@@ -139,7 +197,7 @@ export default function Home() {
             </section>
 
             {/* ── Stats ── */}
-            <section style={{ padding: "0 24px 60px" }}>
+            <section aria-label="Platform highlights" style={{ padding: "0 24px 60px" }}>
                 <Row gutter={[24, 24]} justify="center" style={{ maxWidth: 900, margin: "0 auto" }}>
                     {stats.map((s, i) => (
                         <Col xs={24} sm={8} key={i}>
@@ -151,18 +209,26 @@ export default function Home() {
                                     borderRadius: 16,
                                 }}
                             >
-                                <Statistic
-                                    title={
-                                        <Text style={{ color: "#a0a0b0" }}>{s.label}</Text>
-                                    }
-                                    value={s.value}
-                                    prefix={s.icon}
-                                    valueStyle={{
+                                <div
+                                    style={{
+                                        marginBottom: 4,
+                                        fontSize: 22,
+                                        color: "#667eea",
+                                    }}
+                                >
+                                    {s.icon}
+                                </div>
+                                <div
+                                    style={{
                                         color: "#fff",
                                         fontWeight: 800,
                                         fontSize: 28,
+                                        marginBottom: 4,
                                     }}
-                                />
+                                >
+                                    {s.value}
+                                </div>
+                                <Text style={{ color: "#a0a0b0" }}>{s.label}</Text>
                             </Card>
                         </Col>
                     ))}
@@ -170,7 +236,7 @@ export default function Home() {
             </section>
 
             {/* ── Features ── */}
-            <section style={{ padding: "0 24px 80px" }}>
+            <section aria-label="Platform features" style={{ padding: "0 24px 80px" }}>
                 <Title
                     level={2}
                     style={{
@@ -185,22 +251,7 @@ export default function Home() {
                 <Row gutter={[24, 24]} justify="center" style={{ maxWidth: 1100, margin: "0 auto" }}>
                     {features.map((f, i) => (
                         <Col xs={24} sm={8} key={i}>
-                            <Card
-                                style={{
-                                    textAlign: "center",
-                                    padding: "32px 20px",
-                                    background: "rgba(255,255,255,0.03)",
-                                    border: "1px solid rgba(255,255,255,0.06)",
-                                    borderRadius: 16,
-                                    height: "100%",
-                                }}
-                            >
-                                <div style={{ marginBottom: 16 }}>{f.icon}</div>
-                                <Title level={4} style={{ color: "#fff" }}>
-                                    {f.title}
-                                </Title>
-                                <Text style={{ color: "#a0a0b0" }}>{f.desc}</Text>
-                            </Card>
+                            <FeatureCard icon={f.icon} title={f.title} desc={f.desc} />
                         </Col>
                     ))}
                 </Row>

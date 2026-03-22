@@ -5,16 +5,16 @@ import {
     Col,
     Card,
     Statistic,
-    Empty,
-    Spin,
     Button,
     Divider,
+    Skeleton,
 } from "antd";
 import {
     PictureOutlined,
     ShopOutlined,
     DollarOutlined,
     WalletOutlined,
+    RocketOutlined,
 } from "@ant-design/icons";
 import NFTCard from "../components/NFTCard";
 import ListingModal from "../components/ListingModal";
@@ -32,12 +32,25 @@ interface OwnedNFT {
     image: string;
 }
 
+const gradientIconStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 36,
+    height: 36,
+    borderRadius: "50%",
+    background: "linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2))",
+    border: "1px solid rgba(102,126,234,0.3)",
+    marginRight: 4,
+};
+
 export default function Dashboard() {
     const { provider, account, isConnected, connectWallet } = useWallet();
-    const { nftContract } = useContracts(provider);
+    const { nftContract, marketplaceContract } = useContracts(provider);
     const navigate = useNavigate();
 
     const [ownedNFTs, setOwnedNFTs] = useState<OwnedNFT[]>([]);
+    const [listedCount, setListedCount] = useState(0);
     const [loading, setLoading] = useState(false);
     const [listingModal, setListingModal] = useState<{
         open: boolean;
@@ -72,12 +85,26 @@ export default function Dashboard() {
                 } catch { /* token may be burned */ }
             }
             setOwnedNFTs(items);
+
+            // Count listed NFTs
+            if (marketplaceContract) {
+                const marketplace = await marketplaceContract;
+                const activeIds: bigint[] = await marketplace.getActiveListingIds();
+                let listed = 0;
+                for (const lid of activeIds) {
+                    const l = await marketplace.listings(lid);
+                    if (l.active && l.seller.toLowerCase() === account.toLowerCase()) {
+                        listed++;
+                    }
+                }
+                setListedCount(listed);
+            }
         } catch (err) {
             console.error("Fetch owned NFTs error:", err);
         } finally {
             setLoading(false);
         }
-    }, [nftContract, account]);
+    }, [nftContract, marketplaceContract, account]);
 
     useEffect(() => {
         if (isConnected) fetchOwnedNFTs();
@@ -126,8 +153,18 @@ export default function Dashboard() {
 
     return (
         <div style={{ padding: "40px 24px", maxWidth: 1200, margin: "0 auto" }}>
-            <Title level={2} style={{ color: "#fff", fontWeight: 800, marginBottom: 32 }}>
-                📊 Dashboard
+            <Title
+                level={2}
+                style={{
+                    fontWeight: 800,
+                    marginBottom: 32,
+                    background: "linear-gradient(135deg, #667eea, #764ba2)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                    backgroundClip: "text",
+                }}
+            >
+                Dashboard
             </Title>
 
             {/* Stats */}
@@ -143,7 +180,11 @@ export default function Dashboard() {
                         <Statistic
                             title={<Text style={{ color: "#a0a0b0" }}>Owned NFTs</Text>}
                             value={ownedNFTs.length}
-                            prefix={<PictureOutlined />}
+                            prefix={
+                                <span style={gradientIconStyle}>
+                                    <PictureOutlined style={{ color: "#667eea", fontSize: 16 }} />
+                                </span>
+                            }
                             valueStyle={{ color: "#fff", fontWeight: 700 }}
                         />
                     </Card>
@@ -158,8 +199,12 @@ export default function Dashboard() {
                     >
                         <Statistic
                             title={<Text style={{ color: "#a0a0b0" }}>Listed</Text>}
-                            value={0}
-                            prefix={<ShopOutlined />}
+                            value={listedCount}
+                            prefix={
+                                <span style={gradientIconStyle}>
+                                    <ShopOutlined style={{ color: "#667eea", fontSize: 16 }} />
+                                </span>
+                            }
                             valueStyle={{ color: "#fff", fontWeight: 700 }}
                         />
                     </Card>
@@ -176,7 +221,11 @@ export default function Dashboard() {
                             title={<Text style={{ color: "#a0a0b0" }}>Total Volume</Text>}
                             value="0.0"
                             suffix="ETH"
-                            prefix={<DollarOutlined />}
+                            prefix={
+                                <span style={gradientIconStyle}>
+                                    <DollarOutlined style={{ color: "#667eea", fontSize: 16 }} />
+                                </span>
+                            }
                             valueStyle={{ color: "#fff", fontWeight: 700 }}
                         />
                     </Card>
@@ -188,9 +237,32 @@ export default function Dashboard() {
                 Your NFTs
             </Title>
             {loading ? (
-                <div style={{ textAlign: "center", padding: 60 }}>
-                    <Spin size="large" />
-                </div>
+                <Row gutter={[20, 20]} style={{ marginBottom: 40 }}>
+                    {[1, 2, 3, 4].map((i) => (
+                        <Col xs={24} sm={12} md={8} lg={6} key={i}>
+                            <Card
+                                style={{
+                                    background: "rgba(255,255,255,0.03)",
+                                    border: "1px solid rgba(255,255,255,0.06)",
+                                    borderRadius: 12,
+                                    overflow: "hidden",
+                                }}
+                                bodyStyle={{ padding: 16 }}
+                            >
+                                <Skeleton.Image
+                                    active
+                                    style={{ width: "100%", height: 180, borderRadius: 8 }}
+                                />
+                                <Skeleton
+                                    active
+                                    paragraph={{ rows: 1 }}
+                                    title={{ width: "60%" }}
+                                    style={{ marginTop: 16 }}
+                                />
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
             ) : ownedNFTs.length > 0 ? (
                 <Row gutter={[20, 20]} style={{ marginBottom: 40 }}>
                     {ownedNFTs.map((nft) => (
@@ -203,6 +275,7 @@ export default function Dashboard() {
                                 />
                                 <Button
                                     size="small"
+                                    aria-label={`List ${nft.name} for sale`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         setListingModal({ open: true, tokenId: nft.tokenId });
@@ -226,17 +299,71 @@ export default function Dashboard() {
                     ))}
                 </Row>
             ) : (
-                <Empty
-                    description={
-                        <span style={{ color: "#a0a0b0" }}>
-                            No NFTs yet.{" "}
-                            <a onClick={() => navigate("/create")} style={{ color: "#667eea" }}>
-                                Create one!
-                            </a>
-                        </span>
-                    }
-                    style={{ padding: 40, marginBottom: 40 }}
-                />
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "60px 24px",
+                        marginBottom: 40,
+                        background: "rgba(255,255,255,0.02)",
+                        border: "1px dashed rgba(255,255,255,0.08)",
+                        borderRadius: 16,
+                    }}
+                >
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 72,
+                            height: 72,
+                            borderRadius: "50%",
+                            background: "linear-gradient(135deg, rgba(102,126,234,0.15), rgba(118,75,162,0.15))",
+                            border: "1px solid rgba(102,126,234,0.2)",
+                            marginBottom: 20,
+                        }}
+                    >
+                        <RocketOutlined style={{ fontSize: 32, color: "#667eea" }} />
+                    </div>
+                    <Text
+                        style={{
+                            color: "#fff",
+                            fontSize: 16,
+                            fontWeight: 600,
+                            marginBottom: 8,
+                        }}
+                    >
+                        No NFTs in your collection yet
+                    </Text>
+                    <Text
+                        style={{
+                            color: "#a0a0b0",
+                            fontSize: 14,
+                            marginBottom: 24,
+                            textAlign: "center",
+                            maxWidth: 320,
+                        }}
+                    >
+                        Mint your first NFT and start building your collection on the marketplace.
+                    </Text>
+                    <Button
+                        type="primary"
+                        size="large"
+                        onClick={() => navigate("/create")}
+                        style={{
+                            background: "linear-gradient(135deg, #667eea, #764ba2)",
+                            border: "none",
+                            borderRadius: 10,
+                            fontWeight: 700,
+                            height: 44,
+                            padding: "0 28px",
+                        }}
+                    >
+                        Create Your First NFT
+                    </Button>
+                </div>
             )}
 
             {/* Transaction History */}

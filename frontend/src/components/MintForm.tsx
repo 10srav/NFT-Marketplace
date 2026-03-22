@@ -10,7 +10,7 @@ import {
     message,
     Space,
 } from "antd";
-import { InboxOutlined, LoadingOutlined } from "@ant-design/icons";
+import { InboxOutlined, LoadingOutlined, CheckCircleFilled } from "@ant-design/icons";
 import type { UploadFile } from "antd/es/upload";
 import { uploadImageToIPFS, uploadMetadataToIPFS } from "../services/ipfs";
 import { useWallet } from "../hooks/useWallet";
@@ -19,6 +19,9 @@ import { useContracts } from "../hooks/useContracts";
 const { TextArea } = Input;
 const { Title, Text } = Typography;
 const { Dragger } = Upload;
+
+const MAX_FILE_SIZE_MB = 50;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 
 export default function MintForm() {
     const { provider, isConnected } = useWallet();
@@ -31,6 +34,18 @@ export default function MintForm() {
 
     const onFileChange = (info: any) => {
         const file = info.fileList.slice(-1);
+
+        // Validate file size before accepting
+        if (file.length > 0 && file[0].originFileObj) {
+            const fileSize = file[0].originFileObj.size;
+            if (fileSize > MAX_FILE_SIZE_BYTES) {
+                message.error(
+                    `File size (${(fileSize / (1024 * 1024)).toFixed(1)}MB) exceeds the ${MAX_FILE_SIZE_MB}MB limit. Please choose a smaller file.`
+                );
+                return;
+            }
+        }
+
         setFileList(file);
         if (file.length > 0 && file[0].originFileObj) {
             const reader = new FileReader();
@@ -54,12 +69,12 @@ export default function MintForm() {
         try {
             // Step 1: Upload image to IPFS
             setStep(1);
-            message.loading({ content: "Uploading image to IPFS...", key: "mint" });
+            message.loading({ content: "Uploading image to IPFS... (Step 1/3 ~33%)", key: "mint" });
             const imageCID = await uploadImageToIPFS(fileList[0].originFileObj as File);
 
             // Step 2: Upload metadata to IPFS
             setStep(2);
-            message.loading({ content: "Uploading metadata...", key: "mint" });
+            message.loading({ content: "Uploading metadata... (Step 2/3 ~66%)", key: "mint" });
             const metadataCID = await uploadMetadataToIPFS({
                 name: values.name,
                 description: values.description,
@@ -67,10 +82,9 @@ export default function MintForm() {
             });
 
             // Step 3: Mint NFT on-chain
-            setStep(2);
-            message.loading({ content: "Minting NFT...", key: "mint" });
+            message.loading({ content: "Minting NFT on-chain... (Step 3/3 ~90%)", key: "mint" });
             const contract = await nftContract;
-            const tx = await contract.mintNFT(`ipfs://${metadataCID}`);
+            const tx = await contract.mintNFT(`ipfs://${metadataCID}`, 500);
             await tx.wait();
 
             message.success({ content: "NFT minted successfully! 🎉", key: "mint", duration: 5 });
@@ -117,27 +131,49 @@ export default function MintForm() {
             <Form form={form} layout="vertical" onFinish={handleMint}>
                 <Form.Item label={<Text style={{ color: "#a0a0b0" }}>Image</Text>}>
                     <Dragger
+                        aria-label="Upload NFT image"
                         fileList={fileList}
                         onChange={onFileChange}
                         beforeUpload={() => false}
                         accept="image/*"
                         maxCount={1}
                         style={{
-                            background: "rgba(255,255,255,0.02)",
-                            border: "1px dashed rgba(102,126,234,0.3)",
+                            background: previewUrl
+                                ? "rgba(72,199,142,0.04)"
+                                : "rgba(255,255,255,0.02)",
+                            border: previewUrl
+                                ? "1px dashed rgba(72,199,142,0.4)"
+                                : "1px dashed rgba(102,126,234,0.3)",
                             borderRadius: 12,
+                            transition: "all 0.3s ease",
                         }}
                     >
                         {previewUrl ? (
-                            <img
-                                src={previewUrl}
-                                alt="preview"
-                                style={{
-                                    maxHeight: 200,
-                                    objectFit: "contain",
-                                    borderRadius: 8,
-                                }}
-                            />
+                            <div style={{ position: "relative", display: "inline-block" }}>
+                                <img
+                                    src={previewUrl}
+                                    alt="preview"
+                                    style={{
+                                        maxHeight: 200,
+                                        objectFit: "contain",
+                                        borderRadius: 8,
+                                    }}
+                                />
+                                <CheckCircleFilled
+                                    style={{
+                                        position: "absolute",
+                                        top: -8,
+                                        right: -8,
+                                        fontSize: 24,
+                                        color: "#48c78e",
+                                        background: "#12121a",
+                                        borderRadius: "50%",
+                                    }}
+                                />
+                                <p style={{ color: "#48c78e", fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+                                    Image uploaded — click or drag to replace
+                                </p>
+                            </div>
                         ) : (
                             <>
                                 <p className="ant-upload-drag-icon">
@@ -160,6 +196,7 @@ export default function MintForm() {
                     rules={[{ required: true, message: "Please enter a name" }]}
                 >
                     <Input
+                        aria-required="true"
                         placeholder="My Awesome NFT"
                         style={{
                             background: "rgba(255,255,255,0.04)",
@@ -176,6 +213,7 @@ export default function MintForm() {
                     rules={[{ required: true, message: "Please enter a description" }]}
                 >
                     <TextArea
+                        aria-required="true"
                         rows={3}
                         placeholder="Describe your NFT..."
                         style={{

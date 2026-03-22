@@ -59,6 +59,15 @@ export function useWallet() {
             });
 
             await updateBalance(provider, account);
+
+            // Warn if not on expected chain
+            const chainId = Number(network.chainId);
+            if (chainId !== 31337 && chainId !== 11155111) {
+                setState((prev) => ({
+                    ...prev,
+                    error: "Please switch to Hardhat Local (31337) or Sepolia (11155111)",
+                }));
+            }
         } catch (err: any) {
             setState((prev) => ({
                 ...prev,
@@ -89,7 +98,7 @@ export function useWallet() {
                         connectWallet();
                     }
                 })
-                .catch(() => { });
+                .catch((err: any) => console.warn("Auto-connect check failed:", err));
 
             // Listen for account/chain changes
             window.ethereum.on("accountsChanged", (accounts: string[]) => {

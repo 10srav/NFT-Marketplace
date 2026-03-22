@@ -1,4 +1,5 @@
 import { Table, Tag, Typography } from "antd";
+import { SwapOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 
 const { Text } = Typography;
@@ -41,7 +42,7 @@ const columns: ColumnsType<Transaction> = [
         key: "price",
         render: (price: string) => (
             <Text style={{ color: "#667eea", fontWeight: 600 }}>
-                {price ? `${price} ETH` : "—"}
+                {price ? `${price} ETH` : "\u2014"}
             </Text>
         ),
     },
@@ -62,6 +63,7 @@ const columns: ColumnsType<Transaction> = [
                 href={`https://sepolia.etherscan.io/tx/${hash}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={`View transaction ${hash.slice(0, 8)} on Etherscan`}
                 style={{ color: "#667eea" }}
             >
                 {hash.slice(0, 8)}...{hash.slice(-6)}
@@ -70,48 +72,49 @@ const columns: ColumnsType<Transaction> = [
     },
 ];
 
-// Demo data for display when no real transactions
-const demoData: Transaction[] = [
-    {
-        key: "1",
-        type: "Mint",
-        nftName: "Cosmic Dreamer #1",
-        price: "",
-        date: "2024-01-15",
-        txHash: "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-    },
-    {
-        key: "2",
-        type: "List",
-        nftName: "Cosmic Dreamer #1",
-        price: "0.5",
-        date: "2024-01-16",
-        txHash: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-    },
-    {
-        key: "3",
-        type: "Buy",
-        nftName: "Digital Horizon #7",
-        price: "1.2",
-        date: "2024-01-17",
-        txHash: "0x9876543210fedcba9876543210fedcba9876543210fedcba9876543210fedcba",
-    },
-];
-
 export default function TransactionHistory({
     transactions,
 }: TransactionHistoryProps) {
+    const data = transactions || [];
+
     return (
         <Table
             columns={columns}
-            dataSource={transactions || demoData}
+            dataSource={data}
             pagination={{ pageSize: 5 }}
+            aria-label="Transaction history"
             style={{
                 background: "transparent",
             }}
             locale={{
                 emptyText: (
-                    <Text style={{ color: "#a0a0b0" }}>No transactions yet</Text>
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            padding: "40px 16px",
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 56,
+                                height: 56,
+                                borderRadius: "50%",
+                                background: "linear-gradient(135deg, rgba(102,126,234,0.12), rgba(118,75,162,0.12))",
+                                border: "1px solid rgba(102,126,234,0.18)",
+                                marginBottom: 16,
+                            }}
+                        >
+                            <SwapOutlined style={{ fontSize: 24, color: "#667eea" }} />
+                        </div>
+                        <Text style={{ color: "#a0a0b0", fontSize: 14, textAlign: "center", maxWidth: 300 }}>
+                            Your transaction history will appear here once you start trading
+                        </Text>
+                    </div>
                 ),
             }}
         />

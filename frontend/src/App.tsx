@@ -45,6 +45,21 @@ export default function App() {
             colorBgContainer: "rgba(255,255,255,0.04)",
             colorBorder: "rgba(255,255,255,0.1)",
           },
+          Button: {
+            borderRadius: 10,
+          },
+          Modal: {
+            borderRadius: 16,
+          },
+          Tag: {
+            borderRadius: 6,
+          },
+          Tooltip: {
+            colorBgSpotlight: "#1a1a2e",
+          },
+          Spin: {
+            colorPrimary: "#667eea",
+          },
         },
       }}
     >

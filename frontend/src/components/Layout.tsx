@@ -19,6 +19,12 @@ const navItems = [
     { key: "/dashboard", icon: <DashboardOutlined />, label: "Dashboard" },
 ];
 
+const footerLinks = [
+    { key: "/dashboard", label: "Dashboard" },
+    { key: "/marketplace", label: "Marketplace" },
+    { key: "/create", label: "Create" },
+];
+
 export default function Layout() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -39,11 +45,20 @@ export default function Layout() {
                     background: "rgba(10, 10, 15, 0.85)",
                     backdropFilter: "blur(20px)",
                     borderBottom: "1px solid rgba(255,255,255,0.06)",
+                    borderTop: "2px solid transparent",
+                    borderImage: "linear-gradient(90deg, #667eea, #764ba2, #667eea) 1",
+                    borderImageSlice: 1,
                 }}
             >
                 {/* Logo */}
                 <div
                     onClick={() => navigate("/")}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="NFT Market - Home"
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") navigate("/");
+                    }}
                     style={{
                         cursor: "pointer",
                         display: "flex",
@@ -66,19 +81,21 @@ export default function Layout() {
                 </div>
 
                 {/* Desktop Nav */}
-                <Menu
-                    mode="horizontal"
-                    selectedKeys={[location.pathname]}
-                    onClick={({ key }) => navigate(key)}
-                    items={navItems}
-                    style={{
-                        flex: 1,
-                        justifyContent: "center",
-                        background: "transparent",
-                        borderBottom: "none",
-                    }}
-                    className="desktop-nav"
-                />
+                <nav role="navigation" aria-label="Main navigation">
+                    <Menu
+                        mode="horizontal"
+                        selectedKeys={[location.pathname]}
+                        onClick={({ key }) => navigate(key)}
+                        items={navItems}
+                        style={{
+                            flex: 1,
+                            justifyContent: "center",
+                            background: "transparent",
+                            borderBottom: "none",
+                        }}
+                        className="desktop-nav"
+                    />
+                </nav>
 
                 {/* Wallet */}
                 <div className="desktop-wallet">
@@ -91,6 +108,7 @@ export default function Layout() {
                     type="text"
                     icon={<MenuOutlined style={{ color: "#fff", fontSize: 20 }} />}
                     onClick={() => setDrawerOpen(true)}
+                    aria-label="Open mobile menu"
                 />
             </Header>
 
@@ -102,16 +120,18 @@ export default function Layout() {
                 open={drawerOpen}
                 styles={{ body: { padding: 0, background: "#12121a" }, header: { background: "#12121a", borderBottom: "1px solid rgba(255,255,255,0.06)" } }}
             >
-                <Menu
-                    mode="vertical"
-                    selectedKeys={[location.pathname]}
-                    onClick={({ key }) => {
-                        navigate(key);
-                        setDrawerOpen(false);
-                    }}
-                    items={navItems}
-                    style={{ background: "transparent", borderRight: "none" }}
-                />
+                <nav role="navigation" aria-label="Mobile navigation">
+                    <Menu
+                        mode="vertical"
+                        selectedKeys={[location.pathname]}
+                        onClick={({ key }) => {
+                            navigate(key);
+                            setDrawerOpen(false);
+                        }}
+                        items={navItems}
+                        style={{ background: "transparent", borderRight: "none" }}
+                    />
+                </nav>
                 <div style={{ padding: 16 }}>
                     <WalletConnect />
                 </div>
@@ -130,9 +150,44 @@ export default function Layout() {
                     borderTop: "1px solid rgba(255,255,255,0.06)",
                     color: "#a0a0b0",
                     fontSize: 13,
+                    padding: "32px 24px 24px",
                 }}
             >
-                NFT Marketplace © {new Date().getFullYear()} — Built on Ethereum Sepolia
+                <div
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 24,
+                        marginBottom: 16,
+                        flexWrap: "wrap",
+                    }}
+                >
+                    {footerLinks.map((link) => (
+                        <span
+                            key={link.key}
+                            role="link"
+                            tabIndex={0}
+                            onClick={() => navigate(link.key)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" || e.key === " ") navigate(link.key);
+                            }}
+                            style={{
+                                color: "#a0a0b0",
+                                cursor: "pointer",
+                                fontSize: 13,
+                                fontWeight: 500,
+                                transition: "color 0.2s ease",
+                            }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = "#667eea")}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = "#a0a0b0")}
+                        >
+                            {link.label}
+                        </span>
+                    ))}
+                </div>
+                <div style={{ color: "#a0a0b0", opacity: 0.7 }}>
+                    NFT Marketplace &copy; {new Date().getFullYear()} &mdash; Built on Ethereum Sepolia
+                </div>
             </Footer>
         </AntLayout>
     );
